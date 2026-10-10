@@ -118,12 +118,6 @@
 .connection-setup {
   background: var(--bg);
 }
-.connection-step {
-  font-size: 10px;
-  letter-spacing: 0.08em;
-  color: var(--muted);
-  font-weight: 700;
-}
 .connection-setup h3 {
   font-size: 20px;
   margin: 12px 0 20px;

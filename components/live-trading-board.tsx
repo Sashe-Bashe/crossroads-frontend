@@ -86,9 +86,6 @@ export function LiveTradingBoard({
     <section className="trading-board" aria-label="Live trading activity">
       <div className="trading-heading">
         <div>
-          <span className="trading-eyebrow">
-            <Radio size={14} aria-hidden="true" /> YOUR TRADING FLOOR
-          </span>
           <h2>Your market, in motion.</h2>
           <p>Activity involving your business and its trading partners.</p>
         </div>

@@ -13,16 +13,6 @@
   padding: 24px;
   border-bottom: 1px solid var(--border);
 }
-.trading-eyebrow {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  margin-bottom: 8px;
-}
 .trading-heading h2 {
   font-size: 24px;
   margin: 0 0 4px;

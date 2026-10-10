@@ -272,7 +272,6 @@ export function Connections({ workspace }: { workspace: Workspace }) {
           </form>
         </section>
         <section className="connection-panel connection-setup">
-          <span className="connection-step">HOW TO CONNECT</span>
           <h3>Your assistant. Your workspace.</h3>
           <ol>
             <li>
