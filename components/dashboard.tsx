@@ -46,6 +46,7 @@ import {
   type AuditEvent,
   type Workspace,
   type Offer,
+  type EffectiveRules,
 } from "@/lib/api";
 
 type View =
@@ -213,43 +214,43 @@ export default function Dashboard() {
     [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [reviewed, setReviewed] = useState(false),
     [notice, setNotice] = useState(""),
-    [guardrails, setGuardrails] = useState<Record<string, number> | null>(null);
+    [guardrails, setGuardrails] = useState<EffectiveRules | null>(null);
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState("");
   const load = useCallback(async (identity: Me) => {
     const [ps, ns, os, es, rs] = await Promise.all([
-      api<{ items: Product[] }>("/products?limit=100"),
-      api<{ items: Room[] }>("/negotiations?limit=100"),
-      api<{ items: Order[] }>("/orders?limit=100"),
-      api<{ items: AuditEvent[] }>("/activity?limit=100"),
+      api.products(),
+      api.rooms(),
+      api.orders(),
+      api.activity(),
       identity.workspace.role === "buyer"
-        ? api<{ items: PurchaseRequest[] }>("/requests?limit=100")
-        : Promise.resolve({ items: [] }),
+        ? api.requests()
+        : Promise.resolve([]),
     ]);
-    setProducts(ps.items);
-    setRooms(ns.items);
-    setOrders(os.items);
-    setEvents(es.items);
-    setRequests(rs.items);
+    setProducts(ps);
+    setRooms(ns);
+    setOrders(os);
+    setEvents(es);
+    setRequests(rs);
   }, []);
   const initialize = useCallback(async () => {
     try {
       let identity: Me;
       try {
-        identity = await api<Me>("/auth/me");
+        identity = await api.me();
       } catch {
         localStorage.removeItem("market_workspace");
-        identity = await api<Me>("/auth/me");
+        identity = await api.me();
       }
       setWorkspace(identity.workspace.id);
       setMe(identity);
-      setWorkspaces(await api<Workspace[]>("/workspaces"));
+      setWorkspaces(await api.workspaces());
       await load(identity);
       const params = new URLSearchParams(location.search);
       const initial = params.get("view");
       if (initial && initial in titles) setView(initial as View);
       if (params.get("room")) {
-        setSelectedRoom(await api<Room>(`/negotiations/${params.get("room")}`));
+        setSelectedRoom(await api.room(params.get("room")!));
       }
     } catch {
       setMe(null);
@@ -273,7 +274,7 @@ export default function Dashboard() {
     setError("");
     try {
       localStorage.removeItem("market_workspace");
-      await api("/auth/session", { email, password });
+      await api.signIn(email, password);
       setPassword("");
       await initialize();
     } catch (e) {
@@ -284,7 +285,7 @@ export default function Dashboard() {
   }
   async function signOut() {
     try {
-      await api("/auth/logout", {});
+      await api.signOut();
     } finally {
       setMe(null);
       setSelectedRoom(null);
@@ -300,7 +301,7 @@ export default function Dashboard() {
     setSelectedRequest(null);
     setSelectedOrder(null);
     setError("");
-    const identity = await api<Me>("/auth/me");
+    const identity = await api.me();
     setMe(identity);
     await load(identity);
   }
@@ -310,11 +311,8 @@ export default function Dashboard() {
     setError("");
     setGuardrails(null);
     try {
-      const r = await api<{ effective: Record<string, number> }>(
-        "/rules" +
-          (me?.workspace.role === "seller"
-            ? `?product_id=${room.product_id}`
-            : ""),
+      const r = await api.rules(
+        me?.workspace.role === "seller" ? room.product_id : undefined,
       );
       setGuardrails(r.effective);
     } catch {}
@@ -324,12 +322,11 @@ export default function Dashboard() {
     setBusy(true);
     setError("");
     try {
-      const result = await api<{ state: string }>(
-        `/approvals/${selectedRoom.id}/${reject ? "reject" : "approve"}`,
-        {
-          offer_id: selectedRoom.current_offer.id,
-          expected_version: selectedRoom.version,
-        },
+      const decideOffer = reject ? api.reject : api.approve;
+      const result = await decideOffer(
+        selectedRoom.id,
+        selectedRoom.current_offer.id,
+        selectedRoom.version,
       );
       setNotice(
         reject
@@ -338,7 +335,7 @@ export default function Dashboard() {
             ? "Both businesses approved. Your demo order is confirmed."
             : "Your approval is recorded. Waiting for the other business.",
       );
-      setSelectedRoom(await api<Room>(`/negotiations/${selectedRoom.id}`));
+      setSelectedRoom(await api.room(selectedRoom.id));
       setReviewed(false);
       await load(me);
     } catch (e) {
@@ -1112,9 +1109,7 @@ export default function Dashboard() {
                   className="text-button"
                   onClick={() =>
                     void openRoom(selectedRoom).then(async () => {
-                      setSelectedRoom(
-                        await api<Room>(`/negotiations/${selectedRoom.id}`),
-                      );
+                      setSelectedRoom(await api.room(selectedRoom.id));
                       setReviewed(false);
                     })
                   }

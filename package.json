@@ -8,12 +8,17 @@
     "start": "next start --hostname 0.0.0.0 --port 3100",
     "typecheck": "tsc --noEmit",
     "test": "playwright test",
-    "format": "prettier --write app components lib tests *.ts *.json",
-    "format:check": "prettier --check app components lib tests *.ts *.json"
+    "format": "prettier --write app components lib tests scripts *.ts *.json",
+    "format:check": "prettier --check app components lib tests scripts *.ts *.json",
+    "test:unit": "playwright test api-client.spec.ts proxy.spec.ts",
+    "api:fetch": "bash scripts/fetch-openapi.sh",
+    "api:generate": "bash scripts/fetch-openapi.sh --offline",
+    "api:check": "bash scripts/fetch-openapi.sh --check"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
     "next": "^16.0.0",
+    "openapi-fetch": "^0.17.0",
     "react": "^19.2.0",
     "react-dom": "^19.2.0"
   },
@@ -22,6 +27,7 @@
     "@types/node": "^24.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",
+    "openapi-typescript": "^7.13.0",
     "prettier": "3.6.2",
     "typescript": "^5.9.0"
   }

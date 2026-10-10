@@ -1,4 +1,5 @@
 import { NextRequest } from "next/server";
+import type { components } from "@/lib/generated/api";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 async function proxy(
@@ -7,18 +8,26 @@ async function proxy(
 ) {
   const { path } = await context.params;
   const route = path.join("/");
+  const isRead = req.method === "GET" || req.method === "HEAD";
   if (
-    req.method === "POST" &&
-    !/^(auth\/(session|logout)|approvals\/[^/]+\/(approve|reject))$/.test(route)
+    !isRead &&
+    !(
+      req.method === "POST" &&
+      /^(auth\/(session|logout)|approvals\/[^/]+\/(approve|reject))$/.test(
+        route,
+      )
+    )
   ) {
     return Response.json(
       {
+        status_code: 405,
         error: {
           code: "unsupported_dashboard_action",
           message: "Use the CLI for marketplace operations",
+          details: null,
         },
-      },
-      { status: 405 },
+      } satisfies components["schemas"]["ErrorResponse"],
+      { status: 405, headers: { Allow: "GET, HEAD, POST" } },
     );
   }
   const headers = new Headers();
@@ -38,7 +47,7 @@ async function proxy(
       {
         method: req.method,
         headers,
-        body: req.method === "GET" ? undefined : await req.arrayBuffer(),
+        body: isRead ? undefined : await req.arrayBuffer(),
         cache: "no-store",
         redirect: "manual",
         signal: AbortSignal.timeout(30000),
@@ -61,13 +70,23 @@ async function proxy(
   } catch {
     return Response.json(
       {
+        status_code: 503,
         error: {
           code: "backend_unavailable",
           message: "The marketplace API is unavailable. Please retry.",
+          details: null,
         },
-      },
+      } satisfies components["schemas"]["ErrorResponse"],
       { status: 503 },
     );
   }
 }
-export { proxy as GET, proxy as POST };
+export {
+  proxy as GET,
+  proxy as HEAD,
+  proxy as POST,
+  proxy as PUT,
+  proxy as PATCH,
+  proxy as DELETE,
+  proxy as OPTIONS,
+};
