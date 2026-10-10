@@ -51,6 +51,8 @@ import {
 import { NegotiationGuidance } from "./negotiation-guidance";
 import { NegotiationConversation } from "./negotiation-conversation";
 import { OfferNeedsReview, PrivateBrief } from "./negotiation-needs";
+import { Brand } from "./brand";
+import { WorkspacePulse } from "./workspace-pulse";
 
 type View =
   | "overview"
@@ -126,7 +128,7 @@ function Modal({
       }}
     >
       <div className="modal-heading">
-        <span className="eyebrow">CROSSROADS / REVIEW</span>
+        <Brand />
         <button
           className="icon-button"
           aria-label="Close details"
@@ -221,6 +223,8 @@ export default function Dashboard() {
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState("");
   const [guidanceBusy, setGuidanceBusy] = useState(false);
+  const [lastSynced, setLastSynced] = useState<Date | null>(null);
+  const [syncFailed, setSyncFailed] = useState(false);
   const workspaceRef = useRef<string | null>(null);
   const selectedRoomRef = useRef<Room | null>(null);
   const loadSequence = useRef(0);
@@ -240,7 +244,15 @@ export default function Dashboard() {
         ? api.requests()
         : Promise.resolve([]),
       roomId ? api.room(roomId) : Promise.resolve(null),
-    ]);
+    ]).catch((cause: unknown) => {
+      if (
+        workspaceRef.current === identity.workspace.id &&
+        sequence === loadSequence.current
+      ) {
+        setSyncFailed(true);
+      }
+      throw cause;
+    });
     if (
       workspaceRef.current !== identity.workspace.id ||
       sequence !== loadSequence.current
@@ -251,6 +263,8 @@ export default function Dashboard() {
     setOrders(os);
     setEvents(es);
     setRequests(rs);
+    setLastSynced(new Date());
+    setSyncFailed(false);
     if (detail)
       setSelectedRoom((current) =>
         current?.id === detail.id && current.version <= detail.version
@@ -290,9 +304,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (!me) return;
     const id = setInterval(() => {
-      void load(me).catch((e) => {
-        if (workspaceRef.current === me.workspace.id) setError(e.message);
-      });
+      // load owns sync status; transient polling errors must not overwrite
+      // a user's action error or remain visible after the feed recovers.
+      void load(me).catch(() => {});
     }, 5000);
     return () => clearInterval(id);
   }, [me, load]);
@@ -324,6 +338,8 @@ export default function Dashboard() {
       setSelectedRequest(null);
       setGuidanceBusy(false);
       setBusy(false);
+      setLastSynced(null);
+      setSyncFailed(false);
       localStorage.removeItem("market_workspace");
     }
   }
@@ -345,6 +361,8 @@ export default function Dashboard() {
     setOrders([]);
     setEvents([]);
     setRequests([]);
+    setLastSynced(null);
+    setSyncFailed(false);
     const identity = await api.me();
     if (workspaceRef.current !== id) return;
     setMe(identity);
@@ -411,6 +429,13 @@ export default function Dashboard() {
     active = rooms.filter((r) =>
       ["negotiating", "needs_revision"].includes(r.state),
     );
+  const myReviews = pending.filter(
+    (room) =>
+      room.current_offer &&
+      !room.current_offer.approvals.some(
+        (approval) => approval.workspace_id === me?.workspace.id,
+      ),
+  );
   const filteredProducts = products.filter((p) =>
     `${p.name} ${p.supplier} ${p.sku}`
       .toLowerCase()
@@ -487,9 +512,7 @@ export default function Dashboard() {
   if (booting)
     return (
       <div className="loading-screen">
-        <div className="brand-mark">
-          <ArrowLeftRight />
-        </div>
+        <Brand />
         <p>Opening your workspace…</p>
       </div>
     );
@@ -497,34 +520,49 @@ export default function Dashboard() {
     return (
       <main className="login-page">
         <section className="login-story">
-          <div className="brand">
-            <div className="brand-mark">
-              <ArrowLeftRight />
-            </div>
-            crossroads<span>®</span>
+          <div className="login-brand-row">
+            <Brand inverse />
+            <span>Business, in agreement.</span>
           </div>
-          <div>
-            <div className="eyebrow">A BETTER WAY TO REACH AGREEMENT</div>
+          <div className="login-proposition">
             <h1>
-              Agents do
+              Terms aligned.
               <br />
-              the legwork.
-              <br />
-              <em>You decide.</em>
+              <span>Business moving.</span>
             </h1>
-            <p>
-              A shared workspace for products, commercial conversations and
-              decisions that stay in human hands.
-            </p>
+            <p>Your agents negotiate. Your business decides.</p>
+            <ol className="agreement-flow" aria-label="How agreements work">
+              <li>
+                <Package size={20} aria-hidden="true" />
+                <div>
+                  <strong>Find the right fit</strong>
+                  <span>Products, requirements and supplier matches.</span>
+                </div>
+              </li>
+              <li>
+                <ArrowLeftRight size={20} aria-hidden="true" />
+                <div>
+                  <strong>Bring the terms together</strong>
+                  <span>Follow offers and guide your agent privately.</span>
+                </div>
+              </li>
+              <li>
+                <ShieldCheck size={20} aria-hidden="true" />
+                <div>
+                  <strong>Make the final call</strong>
+                  <span>Both businesses approve the exact offer.</span>
+                </div>
+              </li>
+            </ol>
           </div>
           <div className="login-footer">
-            <span className="live-dot" /> Agent commerce. Human approval.
+            <span>Built for business-to-business commerce.</span>
+            <span>Human approval, always.</span>
           </div>
         </section>
         <section className="login-form-wrap">
           <form onSubmit={signIn}>
-            <span className="eyebrow">YOUR WORKSPACE</span>
-            <h2>Welcome back.</h2>
+            <h2>Your next agreement starts here.</h2>
             <p>Sign in to follow your agents and review proposed deals.</p>
             {error && (
               <div role="alert" className="alert">
@@ -580,10 +618,7 @@ export default function Dashboard() {
             navigate("overview");
           }}
         >
-          <div className="brand-mark">
-            <ArrowLeftRight size={21} />
-          </div>
-          crossroads<span>®</span>
+          <Brand />
         </a>
         <div className="workspace-select">
           <span className="avatar">{me.workspace.name.slice(0, 1)}</span>
@@ -607,7 +642,7 @@ export default function Dashboard() {
           </div>
         </div>
         <div className="nav-label">WORKSPACE</div>
-        <nav>
+        <nav id="workspace-navigation">
           {(Object.keys(titles) as View[])
             .filter((v) => v !== "requests" || me.workspace.role === "buyer")
             .map((v) => {
@@ -615,6 +650,7 @@ export default function Dashboard() {
               return (
                 <button
                   className={view === v ? "active" : ""}
+                  aria-current={view === v ? "page" : undefined}
                   key={v}
                   onClick={() => navigate(v)}
                 >
@@ -631,7 +667,7 @@ export default function Dashboard() {
           <div className="agent-card">
             <div>
               <Terminal size={18} />
-              <strong>Agent connected workflow</strong>
+              <strong>Your agent workflow</strong>
             </div>
             <p>Your agents operate through the CLI. Follow their work here.</p>
           </div>
@@ -663,16 +699,35 @@ export default function Dashboard() {
             className="icon-button mobile-menu"
             onClick={() => setNavOpen(!navOpen)}
             aria-label="Open navigation"
+            aria-expanded={navOpen}
+            aria-controls="workspace-navigation"
           >
             <Menu />
           </button>
           <div className="breadcrumb">
-            Workspace <ChevronRight size={14} />
+            <span className="desktop-workspace-label">Workspace</span>
+            <span className="mobile-workspace-brand">
+              <img
+                src="/brand/neopact-mark-ink.svg"
+                width={32}
+                height={32}
+                alt="neopact"
+              />
+            </span>
+            <ChevronRight size={14} />
             <strong>{human(view)}</strong>
           </div>
           <div className="topbar-right">
-            <span className="live-pill">
-              <span className="live-dot" /> Live workspace
+            <span
+              className={`live-pill${syncFailed ? " sync-stale" : ""}`}
+              role="status"
+            >
+              <span className="live-dot" />{" "}
+              {syncFailed
+                ? "Sync paused · showing last snapshot"
+                : lastSynced
+                  ? `Updated ${lastSynced.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`
+                  : "Loading workspace…"}
             </span>
             <span className="avatar small">{me.user.name[0]}</span>
           </div>
@@ -680,16 +735,12 @@ export default function Dashboard() {
         <main className="content">
           <div className="page-heading">
             <div>
-              <div className="eyebrow">
-                {me.workspace.name.toUpperCase()} /{" "}
-                {me.workspace.role.toUpperCase()}
-              </div>
               <h1>{titles[view]}</h1>
               <p>{subtitles[view]}</p>
             </div>
             <button
               className="button secondary"
-              onClick={() => void load(me).catch((e) => setError(e.message))}
+              onClick={() => void load(me).catch(() => {})}
             >
               <RefreshCw size={16} />
               Refresh
@@ -712,39 +763,70 @@ export default function Dashboard() {
           {view === "overview" && (
             <>
               <div className="stats">
-                <div className="stat">
+                <button
+                  type="button"
+                  className="stat"
+                  onClick={() => navigate("negotiations")}
+                >
                   <span>
                     Active negotiations
                     <ArrowLeftRight size={18} />
                   </span>
-                  <strong>{active.length.toString().padStart(2, "0")}</strong>
+                  <strong>{active.length}</strong>
                   <small>Conversations in progress</small>
-                </div>
-                <div className="stat accent">
+                </button>
+                <button
+                  type="button"
+                  className="stat accent"
+                  onClick={() => navigate("approvals")}
+                >
                   <span>
-                    Awaiting approval
+                    Needs your review
                     <ShieldCheck size={18} />
                   </span>
-                  <strong>{pending.length.toString().padStart(2, "0")}</strong>
-                  <small>Your attention makes the difference</small>
-                </div>
-                <div className="stat">
+                  <strong>{myReviews.length}</strong>
+                  <small>
+                    {pending.length - myReviews.length} already approved by your
+                    business
+                  </small>
+                </button>
+                <button
+                  type="button"
+                  className="stat"
+                  onClick={() => navigate("orders")}
+                >
                   <span>
-                    Confirmed orders
+                    Demo orders
                     <ShoppingBag size={18} />
                   </span>
-                  <strong>{orders.length.toString().padStart(2, "0")}</strong>
+                  <strong>{orders.length}</strong>
                   <small>Approved by both businesses</small>
-                </div>
-                <div className="stat">
+                </button>
+                <button
+                  type="button"
+                  className="stat"
+                  onClick={() => navigate("orders")}
+                >
                   <span>
-                    Agreed order value
+                    {me.workspace.role === "seller"
+                      ? "Agreed sales value"
+                      : "Agreed purchase value"}
                     <TrendingUp size={18} />
                   </span>
                   <strong className="money-stat">{money(total)}</strong>
                   <small>Internal demo order totals</small>
-                </div>
+                </button>
               </div>
+              <p className="snapshot-scope">
+                Current snapshot · up to 100 recent negotiations and 100 orders.
+                Demo totals do not represent payments.
+              </p>
+              <WorkspacePulse
+                rooms={rooms}
+                workspace={me.workspace}
+                onOpenRoom={(room) => void openRoom(room)}
+                onNavigate={navigate}
+              />
               <div className="section-heading">
                 <div>
                   <h2>At the decision point</h2>
@@ -804,6 +886,7 @@ export default function Dashboard() {
                     <h2>Latest activity</h2>
                     <button
                       className="text-button"
+                      aria-label="View all activity"
                       onClick={() => navigate("activity")}
                     >
                       <ArrowUpRight size={18} />
@@ -866,11 +949,11 @@ export default function Dashboard() {
                         <span className="stock-tag">{p.stock} available</span>
                       </div>
                       <div className="product-body">
-                        <span className="eyebrow">{p.supplier}</span>
                         <div className="product-title">
                           <h3>{p.name}</h3>
                           <ArrowUpRight size={20} />
                         </div>
+                        <p className="supplier-label">{p.supplier}</p>
                         <p>
                           {p.attributes.material} · {p.attributes.color}
                         </p>
@@ -1047,7 +1130,7 @@ export default function Dashboard() {
             </section>
           )}
           <footer className="page-footer">
-            <span>crossroads / business in agreement</span>
+            <span>neopact / terms aligned. business moving.</span>
             <span>Local marketplace · EUR · Demo orders</span>
           </footer>
         </main>
@@ -1164,6 +1247,12 @@ export default function Dashboard() {
               {error}
             </div>
           )}
+          {syncFailed && (
+            <div role="alert" className="alert">
+              Workspace sync paused. These are the last retrieved terms; refresh
+              before making a decision.
+            </div>
+          )}
           <NegotiationConversation
             key={`conversation:${me.workspace.id}:${selectedRoom.id}`}
             room={selectedRoom}
@@ -1248,7 +1337,10 @@ export default function Dashboard() {
                     (a) => a.workspace_id === id,
                   );
                   return (
-                    <div key={id || i}>
+                    <div
+                      key={id || i}
+                      className={`approval-party ${approved ? "approved" : "pending"}`}
+                    >
                       {approved ? (
                         <CheckCheck size={19} />
                       ) : (

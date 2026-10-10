@@ -3,7 +3,7 @@ import base from "./playwright.config";
 
 export default defineConfig({
   ...base,
-  testMatch: ["guidance.spec.ts", "conversation.spec.ts"],
+  testMatch: ["guidance.spec.ts", "conversation.spec.ts", "branding.spec.ts"],
   use: {
     ...base.use,
     baseURL: process.env.FRONTEND_URL || "http://127.0.0.1:3171",
