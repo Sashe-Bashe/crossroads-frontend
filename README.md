@@ -1,12 +1,16 @@
-# Crossroads frontend
+# Crossroads human dashboard
 
-Independent Next.js, React, and TypeScript application for human-approved B2B
-procurement. Requires **Node.js 24+**. This repository has its own dependencies,
-lockfile, browser tests, and CI; it imports no code from the backend or MCP repos.
+Next.js App Router, React and TypeScript. The dashboard shows the product catalogue and galleries, buyer requests and comparisons, negotiation history, approval queue, confirmed orders and workspace activity. Seller workspaces see their own negotiations and orders; buyer-only request views are absent.
 
-## Run
+Human reviewers inspect immutable terms, product evidence, changes from the previous offer, current validity and both approval states. Approval requires checking the exact-offer acknowledgement. The API rechecks the offer, policies and inventory when each approval arrives. A stale open dialog cannot approve a newer offer accidentally.
 
-Start the marketplace backend separately on `http://localhost:4000`, then:
+Catalogue editing, request creation, rule configuration and negotiation actions use the [CLI](https://github.com/iivko/crossroads-cli/blob/main/README.md). This dashboard's write proxy allows only browser login, logout and approval decisions.
+
+## Run locally
+
+Recommended: follow [backend Docker Compose setup](https://github.com/iivko/crossroads-backend/blob/main/README.md). The UI runs at http://localhost:3100.
+
+For host development, start the API and worker separately, then:
 
 ```sh
 npm ci
@@ -14,75 +18,28 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Open **http://localhost:3000**. The default API CORS configuration permits that
-exact origin; if you use a different frontend address, update backend
-`CORS_ORIGIN`. Set `NEXT_PUBLIC_API_URL` in `.env.local` to change the backend and
-restart/rebuild the application. This variable is public configuration, never a
-secret. Do not put real credentials in `NEXT_PUBLIC_*` variables.
+Node.js 24 is the tested runtime. `API_INTERNAL_URL` is a server-only runtime setting, defaulting to `http://127.0.0.1:8100`; Compose sets it to `http://api:8100`. No browser bearer token or storage secret is embedded in the build. Browser calls stay on the dashboard origin through `/api/v1/*`.
 
-## Try the workflow
+The API uses HttpOnly session cookies plus a CSRF cookie/header and an allowed Origin check. Configure `FRONTEND_URL` and `ALLOWED_ORIGINS` in the backend if changing the dashboard port. Keep agent credentials separate from human browser sessions.
 
-1. Use the default **Human buyer / approver** identity. In Marketplace, choose a
-   service and send an RFQ with budget, deadline, and measurable acceptance criteria.
-   Choose a deadline comfortably in the future, such as two weeks from today.
-2. Use **Switch identity → Human seller**. Open Requests for quote, select the
-   request, and submit a quote. Its delivery duration must fit before the RFQ
-   deadline; its expiration must also be in the future.
-3. Switch back to the human buyer. Select the request and review the quote's order
-   preview, including its exact scope, price, deadline, acceptance criteria, and terms.
-4. Request human approval, approve the snapshot, then commit the order. These are
-   separate actions. Approval alone does not place an order.
-5. Switch to the seller, open Orders, and submit an HTTPS delivery link and notes.
-6. Switch back to the buyer and explicitly accept delivery, or open a dispute.
-   Both parties can read recorded dispute reasons on the order.
-
-The **Delegated buyer agent** identity demonstrates restricted agent actions:
-it can request approval and commit approved orders but cannot approve a purchase
-or accept delivery. All permissions and state transitions are enforced by the
-backend, including when callers bypass this UI.
-
-The UI includes service search/filtering, an RFQ inbox and quote review, approval
-inbox, order tracking, and organization audit history. It adapts to mobile screens.
-It shows API errors and provides refresh/retry controls rather than falling back
-to fake successful purchases when the backend is unavailable.
-
-## Demo boundaries
-
-The identity switcher uses public local-demo credentials. Tokens remain in memory
-and reset when the page reloads. This is not production login or session handling.
-Business verification is simulated. Payment states explicitly say
-`simulated_pending` / `simulated_settled`; no funds move. Delivery references are
-links, not uploaded files or automatically verified outputs. There is no admin,
-payment-provider onboarding, listing editor, or dispute resolution screen yet.
-
-Order attempts retain one idempotency key per organization/preview in browser
-session storage, so a manual retry after a lost response reuses the original key.
-The backend remains responsible for deduplication and approval consumption.
-Other mutations are not automatically retried; refresh to inspect their outcome
-after a connection failure before submitting them again.
-
-## Build and verify
+## Checks
 
 ```sh
 npm run typecheck
+npm run format:check
 npm run build
-npx playwright install chromium
-npm test
-# Or run all three checks:
-npm run check
 ```
 
-Browser tests intercept API requests, so this repository's CI runs independently
-of backend source or a running backend. They cover mobile overflow and filtering,
-full contract visibility during approval, absence of agent approval controls,
-stable idempotency keys after a failed commit, and API unavailability. They do not
-replace backend authorization tests. A real browser flow against the local backend
-can be followed using the steps above.
+The Docker image runs Next.js's standalone server as a non-root user. For a temporary host production preview, `npm run start` serves the completed build; Docker uses the generated standalone `server.js` directly.
 
-If Chromium is already installed, optionally use
-`PW_EXECUTABLE_PATH=/usr/bin/google-chrome npm test`. Test reports, traces, and
-screenshots are generated under ignored `test-results/` and `playwright-report/`.
+## Browser test
 
-`npm run format` formats source/configuration files. Dependency versions are pinned
-and recorded in `package-lock.json`. For compiled serving, run `npm run build`
-followed by `npm start`; the application still targets the separate demo backend.
+Start the full stack and seed data. Prepare one pending deal using `uv run python scripts/demo_agents.py` from `backend`, then:
+
+```sh
+npm test
+```
+
+The test uses `/usr/bin/google-chrome` by default. Set `CHROME_PATH` to a Chrome/Chromium executable if needed, and `FRONTEND_URL` if the dashboard is elsewhere. It logs in as both demo users, downloads visible gallery images, reviews exact terms, approves the same offer twice, and verifies the persisted order. **It creates a demo order and allocates 80 chairs**; run it only against a disposable or explicitly seeded demo environment. The backend unit/integration suite uses separate schemas and does not consume demo stock.
+
+Screenshots and traces are written to ignored `test-results/`. Desktop and 390px mobile views are covered. The interface polls every five seconds and also has manual Refresh. No third-party analytics or external image services are used.

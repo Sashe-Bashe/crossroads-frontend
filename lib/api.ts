@@ -1,159 +1,161 @@
-export const API_URL = (
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000"
-).replace(/\/$/, "");
-export type Listing = {
+export type ImageAsset = {
   id: string;
-  sellerId: string;
-  title: string;
-  description: string;
-  category: string;
-  priceCents: number;
-  currency: string;
-  deliveryDays: number;
-  verified: boolean;
-};
-export type RFQ = {
-  id: string;
-  buyerId: string;
-  listingId: string;
-  title: string;
-  description: string;
-  budgetCents: number;
-  currency: string;
-  deadline: string;
-  acceptanceCriteria: string;
   status: string;
-  createdAt: string;
+  mime: string;
+  width: number;
+  height: number;
+  caption: string;
+  content_path: string;
+  thumbnail_path: string;
 };
-export type Quote = {
+export type Product = {
   id: string;
-  rfqId: string;
-  sellerId: string;
-  scope: string;
-  totalCents: number;
-  currency: string;
-  deliveryDays: number;
-  expiresAt: string;
-  termsVersion: string;
+  name: string;
+  description: string;
+  sku: string;
+  supplier: string;
+  workspace_id: string;
+  stock: number;
   version: number;
-  status: string;
+  published: boolean;
+  unit_price: number;
+  delivery_charge: number;
+  lead_days: number;
+  destinations: string[];
+  attributes: { material: string; stackable: boolean; color: string };
+  cover_id: string | null;
+  images: ImageAsset[];
 };
-export type Preview = {
+export type PurchaseRequest = {
   id: string;
-  quoteId: string;
-  buyerId: string;
-  sellerId: string;
-  scope: string;
-  totalCents: number;
+  workspace_id: string;
+  title: string;
+  description?: string;
+  state: string;
+  quantity: number;
+  material: string;
+  stackable: boolean;
+  destination: string;
+  latest_delivery: string;
+  max_total?: number;
+  max_deposit_percent?: number;
+  preference?: string;
+  matches?: {
+    product_id: string;
+    supplier: string;
+    eligible: boolean;
+    reasons: string[];
+  }[];
+};
+export type Terms = {
+  unit_price: number;
+  quantity: number;
+  total: number;
+  delivery_charge: number;
+  deposit_percent: number;
+  delivery_date: string;
   currency: string;
-  deliveryDays: number;
-  termsVersion: string;
-  quoteVersion: number;
-  snapshotHash: string;
-  expiresAt: string;
-  acceptanceCriteria: string;
-  deadline: string;
-  termsText: string;
-  feesCents: number;
-  taxesCents: number;
 };
-export type Approval = {
+export type Offer = {
   id: string;
-  previewId: string;
-  status: string;
-  payloadHash: string;
-  preview?: Preview;
+  version: number;
+  sender: string;
+  terms: Terms;
+  product: Product;
+  expires_at: string;
+  approvals: { workspace_id: string; user_id: string; at: string }[];
+};
+export type Room = {
+  id: string;
+  request_id: string;
+  supplier: string;
+  seller_id: string;
+  product_id: string;
+  state: string;
+  version: number;
+  next_role: string;
+  reason: string | null;
+  agent_status: string;
+  request: PurchaseRequest;
+  product: Product;
+  current_offer: Offer | null;
+  offers: Offer[];
+  valid: boolean;
+  invalid_reasons: string[];
+  approval_url: string;
+  activity: {
+    id: string;
+    role: string;
+    type: string;
+    data: Record<string, unknown>;
+    at: string;
+  }[];
 };
 export type Order = {
   id: string;
-  buyerId: string;
-  sellerId: string;
-  scope: string;
-  totalCents: number;
-  currency: string;
+  request_id: string;
+  room_id: string;
+  buyer_id: string;
+  seller_id: string;
+  buyer: string;
+  seller: string;
   status: string;
-  paymentStatus: string;
-  createdAt: string;
-  deliveryUrl?: string;
-  deliveryNotes?: string;
-  disputes?: {
-    id: string;
-    reason: string;
-    status: string;
-    createdAt: string;
-  }[];
+  created_at: string;
+  offer: Offer;
 };
-export type Actor = {
+export type AuditEvent = {
   id: string;
-  organizationId: string;
-  kind: string;
-  role: string;
+  actor_id: string;
+  type: string;
+  resource_id: string;
+  data: Record<string, unknown>;
+  at: string;
 };
-export type Audit = {
-  id: string;
-  actorId: string;
-  organizationId: string;
-  action: string;
-  resourceId: string;
-  createdAt: string;
+export type Workspace = { id: string; name: string; role: "buyer" | "seller" };
+export type Me = {
+  user: { name: string; email: string };
+  workspace: Workspace;
+  credential: { kind: string; scopes: string[] };
+  can_approve: boolean;
+  demo: boolean;
 };
-export async function api<T>(
-  token: string,
-  path: string,
-  body?: unknown,
-  key?: string,
-): Promise<T> {
-  let response: Response;
-  try {
-    response = await fetch(`${API_URL}/v1${path}`, {
-      method: body === undefined ? "GET" : "POST",
-      headers: {
-        Authorization: `Bearer ${token}`,
-        ...(body === undefined ? {} : { "Content-Type": "application/json" }),
-        ...(key ? { "Idempotency-Key": key } : {}),
-      },
-      body: body === undefined ? undefined : JSON.stringify(body),
-      signal: AbortSignal.timeout(15000),
-      cache: "no-store",
-    });
-  } catch {
-    throw new Error(
-      "Cannot reach the demo API. Check the backend, API URL, and CORS configuration, then retry.",
-    );
-  }
-  const data = await response.json().catch(() => null);
-  if (!response.ok)
-    throw new Error(
-      data?.error?.message
-        ? `${data.error.code}: ${data.error.message}`
-        : `Request failed (${response.status})`,
-    );
-  return data as T;
-}
 export const money = (cents: number) =>
-  new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(
+  new Intl.NumberFormat("en-IE", { style: "currency", currency: "EUR" }).format(
     cents / 100,
   );
-export function cents(value: string) {
-  if (!/^\d+(\.\d{1,2})?$/.test(value))
-    throw new Error("Enter a USD amount with at most two decimal places.");
-  const [whole, fraction = ""] = value.split(".");
-  const result = Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
-  if (!Number.isSafeInteger(result) || result <= 0)
-    throw new Error("Amount must be positive and within the supported range.");
-  return result;
+export const human = (value: string) => value.replaceAll("_", " ");
+export function setWorkspace(id: string) {
+  localStorage.setItem("market_workspace", id);
 }
-export const date = (value: string) =>
-  new Date(value).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-export const safeUrl = (value: string) => {
-  try {
-    const url = new URL(value);
-    return url.protocol === "https:" ? url.href : undefined;
-  } catch {
-    return undefined;
+export async function api<T>(path: string, body?: unknown): Promise<T> {
+  const headers: Record<string, string> = {};
+  const workspace = localStorage.getItem("market_workspace");
+  if (workspace) headers["X-Workspace-ID"] = workspace;
+  if (body !== undefined) {
+    headers["Content-Type"] = "application/json";
+    headers["X-CSRF-Token"] = decodeURIComponent(
+      document.cookie
+        .split("; ")
+        .find((c) => c.startsWith("market_csrf="))
+        ?.split("=")
+        .slice(1)
+        .join("=") || "",
+    );
   }
-};
+  const res = await fetch(`/api/v1${path}`, {
+    method: body === undefined ? "GET" : "POST",
+    headers,
+    body: body === undefined ? undefined : JSON.stringify(body),
+    credentials: "same-origin",
+    cache: "no-store",
+  });
+  const value = await res.json();
+  if (!res.ok)
+    throw new Error(value.error?.message || `Request failed (${res.status})`);
+  return value;
+}
+export function imageUrl(image: ImageAsset, thumb = false) {
+  const path = thumb ? image.thumbnail_path : image.content_path;
+  const wid = localStorage.getItem("market_workspace") || "";
+  return `/api/v1${path}${path.includes("?") ? "&" : "?"}workspace_id=${encodeURIComponent(wid)}`;
+}

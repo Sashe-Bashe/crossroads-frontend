@@ -1,189 +1,87 @@
-import { expect, test, type Page } from "@playwright/test";
-
-const future = () => new Date(Date.now() + 14 * 86_400_000).toISOString();
-const listing = {
-  id: "catalog-cleanup",
-  sellerId: "seller-org",
-  title: "Product catalog normalization",
-  description: "Normalize records and flag duplicates.",
-  category: "catalog-data",
-  priceCents: 35000,
-  currency: "USD",
-  deliveryDays: 3,
-  verified: true,
-};
-const preview = {
-  id: "preview-1",
-  quoteId: "quote-1",
-  buyerId: "buyer-org",
-  sellerId: "seller-org",
-  scope: "Normalize 5000 records",
-  totalCents: 35000,
-  currency: "USD",
-  deliveryDays: 3,
-  termsVersion: "demo-catalog-v1",
-  quoteVersion: 1,
-  snapshotHash: "transaction-hash",
-  expiresAt: future(),
-  acceptanceCriteria: "Valid CSV with duplicate report",
-  deadline: future(),
-  termsText: "No supplier model training on buyer data.",
-  feesCents: 0,
-  taxesCents: 0,
-};
-
-async function fixture(page: Page, approvalStatus?: string) {
-  let status = approvalStatus;
-  await page.route("**/v1/**", async (route) => {
-    const request = route.request(),
-      path = new URL(request.url()).pathname;
-    const agent = request.headers().authorization === "Bearer demo-agent-token";
-    let body: unknown = [];
-    if (path === "/v1/me")
-      body = {
-        id: agent ? "buyer-agent" : "buyer-human",
-        organizationId: "buyer-org",
-        kind: agent ? "agent" : "human",
-        role: "approver",
-      };
-    if (path === "/v1/listings") body = [listing];
-    if (path === "/v1/approvals")
-      body = status
-        ? [
-            {
-              id: "approval-1",
-              previewId: preview.id,
-              status,
-              payloadHash: preview.snapshotHash,
-              preview,
-            },
-          ]
-        : [];
-    if (path === "/v1/approvals/approval-1/approve") {
-      status = "approved";
-      body = { id: "approval-1", status };
-    }
-    await route.fulfill({
-      json: body,
-      headers: { "Access-Control-Allow-Origin": "*" },
-    });
-  });
-}
-
-test("responsive marketplace loads API listings and filters without horizontal overflow", async ({
-  page,
-}) => {
-  await fixture(page);
+import { test, expect } from "@playwright/test";
+const password = process.env.DEMO_PASSWORD || "local-market-demo";
+async function login(page: import("@playwright/test").Page, email: string) {
   await page.goto("/");
+  await page.getByLabel("Email address").fill(email);
+  await page.getByLabel("Password", { exact: true }).fill(password);
+  await page.getByRole("button", { name: "Open workspace" }).click();
   await expect(
-    page.getByRole("heading", { name: "Good work starts here." }),
+    page.getByRole("heading", { name: "Your commerce, in view." }),
   ).toBeVisible();
+}
+test("buyer and seller review the same offer and approve through the UI", async ({
+  page,
+  browser,
+}) => {
+  await login(page, "buyer@demo.local");
+  await page.getByRole("button", { name: /^Products$/ }).click();
   await expect(
-    page.getByRole("heading", { name: listing.title }),
+    page.getByRole("heading", { name: "The product catalogue." }),
   ).toBeVisible();
+  await page.getByRole("button", { name: /Arc stack chair/ }).click();
+  await expect(page.getByRole("dialog")).toBeVisible();
+  await expect(
+    page.getByRole("dialog").locator(".gallery-main img"),
+  ).toHaveJSProperty("complete", true);
   await page
-    .locator("nav")
-    .getByRole("button", { name: "Marketplace", exact: true })
+    .getByRole("button", { name: "Side illustration", exact: true })
     .click();
-  await page
-    .getByRole("textbox", { name: "Search services" })
-    .fill("does-not-exist");
+  await page.getByRole("button", { name: "Close details" }).click();
+  await page.getByRole("button", { name: /^Approvals/ }).click();
+  const row = page
+    .locator("tbody tr")
+    .filter({ hasText: "CLI demonstration" })
+    .first();
+  await expect(row).toBeVisible();
+  await row.getByRole("button", { name: "Review" }).click();
+  const modal = page.getByRole("dialog");
+  await expect(modal).toContainText("€6,880.00");
   await expect(
-    page.getByRole("heading", { name: "No services found" }),
-  ).toBeVisible();
-  await page.getByRole("textbox", { name: "Search services" }).fill("");
-  await page.setViewportSize({ width: 390, height: 844 });
-  await expect(
-    page.getByRole("heading", { name: listing.title }),
-  ).toBeVisible();
-  expect(
-    await page.evaluate(
-      () => document.documentElement.scrollWidth <= window.innerWidth,
-    ),
-  ).toBe(true);
+    modal.getByRole("button", { name: "Approve exact offer" }),
+  ).toBeDisabled();
+  await modal.getByRole("checkbox").check();
+  await modal.getByRole("button", { name: "Approve exact offer" }).click();
+  await expect(page.getByRole("status")).toContainText(
+    "Your approval is recorded",
+  );
+  await page.getByRole("button", { name: "Close details" }).click();
   await page.screenshot({
-    path: "test-results/mobile-marketplace.png",
+    path: "test-results/buyer-approvals-desktop.png",
     fullPage: true,
   });
-});
-
-test("human review shows exact terms, criteria and deadline; agents cannot grant approval", async ({
-  page,
-}) => {
-  await fixture(page, "pending");
-  await page.goto("/");
+  const sellerContext = await browser.newContext();
+  const seller = await sellerContext.newPage();
+  await login(seller, "forma@demo.local");
   await expect(
-    page.getByText("Connected to demo API", { exact: true }),
-  ).toBeVisible();
-  await page.locator("nav").getByRole("button", { name: "Approvals" }).click();
-  await expect(
-    page.getByText(preview.termsText, { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText(preview.acceptanceCriteria, { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByText("Delivery deadline", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Approve snapshot" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: "Switch identity" }).click();
-  await page
-    .getByRole("combobox", { name: "Demo identity", exact: true })
-    .selectOption("demo-agent-token");
-  await expect(
-    page.getByText("agent / approver", { exact: false }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "Approve snapshot" }),
+    seller.getByRole("button", { name: "Requests", exact: true }),
   ).toHaveCount(0);
-  await expect(page.getByRole("button", { name: "Commit order" })).toHaveCount(
-    0,
+  await seller.getByRole("button", { name: /^Approvals/ }).click();
+  await seller
+    .locator("tbody tr")
+    .filter({ hasText: "80 chairs for Sofia" })
+    .first()
+    .getByRole("button", { name: "Review" })
+    .click();
+  await seller.getByRole("dialog").getByRole("checkbox").check();
+  await seller.getByRole("button", { name: "Approve exact offer" }).click();
+  await expect(seller.getByRole("status")).toContainText(
+    "Your demo order is confirmed",
   );
-});
-
-test("ambiguous order failure keeps the same idempotency key for a manual retry", async ({
-  page,
-}) => {
-  await fixture(page, "approved");
-  const keys: string[] = [];
-  await page.route("**/v1/orders", async (route) => {
-    if (route.request().method() === "GET") return route.fulfill({ json: [] });
-    keys.push(route.request().headers()["idempotency-key"]);
-    if (keys.length === 1) return route.abort("failed");
-    await route.fulfill({ json: { id: "order-1" } });
+  await seller.getByRole("button", { name: "Close details" }).click();
+  await page.getByRole("button", { name: "Orders", exact: true }).click();
+  await page.getByRole("button", { name: "Refresh", exact: true }).click();
+  await expect(page.locator("tbody")).toContainText("€6,880.00");
+  await page.getByRole("button", { name: "View order" }).first().click();
+  await expect(page.getByRole("dialog")).toContainText("Buyer approval");
+  await expect(page.getByRole("dialog")).toContainText("Seller approval");
+  await page.getByRole("button", { name: "Close details" }).click();
+  await page.reload();
+  await expect(page.locator("tbody")).toContainText("€6,880.00");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.screenshot({
+    path: "test-results/orders-mobile.png",
+    fullPage: true,
   });
-  await page.goto("/");
-  await expect(
-    page.getByText("Connected to demo API", { exact: true }),
-  ).toBeVisible();
-  await page.locator("nav").getByRole("button", { name: "Approvals" }).click();
-  await page.getByRole("button", { name: "Commit order" }).click();
-  await expect(page.locator("main").getByRole("alert")).toContainText(
-    "Cannot reach",
-  );
-  await page.getByRole("button", { name: "Commit order" }).click();
-  await expect(
-    page.getByRole("heading", { name: "Every delivery, in view." }),
-  ).toBeVisible();
-  expect(keys).toHaveLength(2);
-  expect(keys[0]).toBeTruthy();
-  expect(keys[1]).toBe(keys[0]);
-});
-
-test("unavailable API displays a recoverable connection error", async ({
-  page,
-}) => {
-  await page.route("**/v1/**", (route) => route.abort("failed"));
-  await page.goto("/");
-  await expect(page.locator("main").getByRole("alert")).toContainText(
-    "Cannot reach the demo API",
-  );
-  await expect(
-    page.getByText("Awaiting API connection", { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByRole("button", { name: "New request", exact: true }),
-  ).toBeDisabled();
+  await expect(page.locator("body")).toHaveJSProperty("scrollWidth", 390);
+  await sellerContext.close();
 });

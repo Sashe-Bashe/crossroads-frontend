@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import "./globals.css";
 export const metadata: Metadata = {
-  title: "Crossroads | Procurement workspace",
-  description: "Discover suppliers. Scope work. Approve with confidence.",
+  title: "Crossroads — Agent commerce, human decisions",
+  description:
+    "A workspace for product discovery, agent negotiations and human-approved purchasing.",
 };
 export default function RootLayout({
   children,
