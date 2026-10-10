@@ -41,6 +41,8 @@ cp .env.example .env.local
 npm run dev
 ```
 
+The API and worker can run from the backend's existing Docker configuration while this checkout serves the UI on the host. From the backend directory, run `docker compose up --build -d postgres minio api worker`, followed by the explicit demo seed command `docker compose exec api python -m market.manage seed`. Keep the database and storage volumes. Start this frontend with `API_INTERNAL_URL=http://127.0.0.1:8100`; changing that runtime URL requires restarting the frontend process. This hybrid setup also works when the two checkouts have different directory names from the full-stack Compose example.
+
 Node.js 24 is the tested runtime. `API_INTERNAL_URL` is a server-only runtime setting, defaulting to `http://127.0.0.1:8100`; Compose sets it to `http://api:8100`. No browser bearer token or storage secret is embedded in the build. Browser calls stay on the dashboard origin through `/api/v1/*`.
 
 The API uses HttpOnly session cookies plus a CSRF cookie/header and an allowed Origin check. Configure `FRONTEND_URL` and `ALLOWED_ORIGINS` in the backend if changing the dashboard port. Keep agent credentials separate from human browser sessions.
@@ -142,7 +144,17 @@ Start the full stack and seed data. Prepare one pending deal using `uv run pytho
 npx playwright test workspace.spec.ts
 ```
 
-`npm test` includes this state-changing integration test. CI runs the safe `test:unit` and `test:ui` suites instead; it never runs `workspace.spec.ts`.
+The approval test selects a valid demonstration with neither approval recorded. Set `DEMO_ROOM_ID` to the room ID printed by the script to target a specific fresh deal. Buyer and seller follow the same room and immutable offer ID: sellers intentionally receive a redacted request title, so their title must not be matched against the buyer's private title. The test checks both recorded approvals, one resulting order, and the corresponding stock allocation.
+
+To reconcile the dashboard with the actual seeded backend without creating orders:
+
+```sh
+npx playwright test live-metrics.spec.ts
+```
+
+These live checks compare buyer/seller metrics, state distribution and offer drilldowns against authenticated API responses, and verify real product images, purchase requirements and audit activity. They require at least one negotiation created by the CLI demonstration. All business-data operations in this suite are reads; sign-in creates normal local sessions.
+
+`npm test` includes the live read-only checks and the state-changing approval integration test. CI runs the safe `test:unit` and `test:ui` suites instead; it never runs either live test file.
 
 The integration test uses `/usr/bin/google-chrome` by default. Set `CHROME_PATH` to a Chrome/Chromium executable if needed, and `FRONTEND_URL` if the dashboard is elsewhere. It logs in as both demo users, downloads visible gallery images, reviews exact terms, approves the same offer twice, and verifies the persisted order. **It creates a demo order and allocates 80 chairs**; run it only against a disposable or explicitly seeded demo environment. The backend unit/integration suite uses separate schemas and does not consume demo stock.
 
