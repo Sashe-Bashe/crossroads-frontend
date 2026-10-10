@@ -1,0 +1,221 @@
+{
+  "method": "WCAG relative luminance from sRGB; float64 calculation, ratios rounded to 6 decimal places",
+  "pairs": [
+    {
+      "use": "Primary text / white",
+      "foreground": "#132F2B",
+      "background": "#FFFFFF",
+      "ratio": 14.293696,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Primary text / canvas",
+      "foreground": "#132F2B",
+      "background": "#F6F7F2",
+      "ratio": 13.276144,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Muted text / white",
+      "foreground": "#586963",
+      "background": "#FFFFFF",
+      "ratio": 5.807936,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Muted text / canvas",
+      "foreground": "#586963",
+      "background": "#F6F7F2",
+      "ratio": 5.394476,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Primary button",
+      "foreground": "#FFFFFF",
+      "background": "#244B43",
+      "ratio": 9.71101,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Primary hover",
+      "foreground": "#FFFFFF",
+      "background": "#183B34",
+      "ratio": 12.251967,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Primary active",
+      "foreground": "#FFFFFF",
+      "background": "#102E28",
+      "ratio": 14.548275,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Secondary default",
+      "foreground": "#244B43",
+      "background": "#FFFFFF",
+      "ratio": 9.71101,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Secondary hover",
+      "foreground": "#244B43",
+      "background": "#EEF1EC",
+      "ratio": 8.522,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Secondary active",
+      "foreground": "#244B43",
+      "background": "#D7DFD7",
+      "ratio": 7.133312,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Danger button",
+      "foreground": "#FFFFFF",
+      "background": "#A43131",
+      "ratio": 6.857864,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Danger hover and active",
+      "foreground": "#FFFFFF",
+      "background": "#882626",
+      "ratio": 8.928262,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Brand highlight",
+      "foreground": "#132F2B",
+      "background": "#D9F26F",
+      "ratio": 11.489909,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Control border / white",
+      "foreground": "#788A81",
+      "background": "#FFFFFF",
+      "ratio": 3.651538,
+      "requiredMinimum": 3.0,
+      "passes": true
+    },
+    {
+      "use": "Control border / canvas",
+      "foreground": "#788A81",
+      "background": "#F6F7F2",
+      "ratio": 3.391589,
+      "requiredMinimum": 3.0,
+      "passes": true
+    },
+    {
+      "use": "Focus / white",
+      "foreground": "#244B43",
+      "background": "#FFFFFF",
+      "ratio": 9.71101,
+      "requiredMinimum": 3.0,
+      "passes": true
+    },
+    {
+      "use": "Focus / canvas",
+      "foreground": "#244B43",
+      "background": "#F6F7F2",
+      "ratio": 9.019694,
+      "requiredMinimum": 3.0,
+      "passes": true
+    },
+    {
+      "use": "Focus / dark brand",
+      "foreground": "#D9F26F",
+      "background": "#132F2B",
+      "ratio": 11.489909,
+      "requiredMinimum": 3.0,
+      "passes": true
+    },
+    {
+      "use": "Inverse text / dark brand",
+      "foreground": "#FFFFFF",
+      "background": "#132F2B",
+      "ratio": 14.293696,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Muted text / dark brand",
+      "foreground": "#D7DFD7",
+      "background": "#132F2B",
+      "ratio": 10.499567,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Success status",
+      "foreground": "#1E563C",
+      "background": "#E8F3EB",
+      "ratio": 7.526215,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Pending status",
+      "foreground": "#78501A",
+      "background": "#FFF1D6",
+      "ratio": 6.35095,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Danger status",
+      "foreground": "#A43131",
+      "background": "#FDEDED",
+      "ratio": 6.045726,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Information status",
+      "foreground": "#235C88",
+      "background": "#EAF2FA",
+      "ratio": 6.281535,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Expired and disabled text",
+      "foreground": "#586963",
+      "background": "#EEF1EC",
+      "ratio": 5.096816,
+      "requiredMinimum": 4.5,
+      "passes": true
+    },
+    {
+      "use": "Decorative line only: unsuitable as essential boundary",
+      "foreground": "#D7DFD7",
+      "background": "#FFFFFF",
+      "ratio": 1.361361,
+      "requiredMinimum": null,
+      "passes": null
+    },
+    {
+      "use": "Lime on white: unsuitable as text or essential graphic",
+      "foreground": "#D9F26F",
+      "background": "#FFFFFF",
+      "ratio": 1.244022,
+      "requiredMinimum": null,
+      "passes": null
+    }
+  ]
+}

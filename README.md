@@ -12,6 +12,11 @@ Open a room from **Negotiations** or **Approvals**, select **Negotiate more**, w
 
 Sending starts a fresh bounded round and clears previous approvals. Existing price floors, budgets and other rules still apply. A new agreement requires both human approvals; confirmed orders cannot be reopened. Your own agent must be connected and watching its inbox, or restarted to pick up the instruction. The dashboard does not host a model. See the [complete guidance and agent setup guide](https://github.com/iivko/crossroads-backend/blob/main/docs/NEGOTIATE_MORE.md).
 
+## Neopact design system
+
+The shared [brand kit](design/neopact-brand-system/README.md) contains logos, bundled fonts, CSS/JSON tokens, component guidance, and the visual reference. Contributors and implementation agents should start with the [agent handoff](design/neopact-brand-system/AGENT-HANDOFF.md) before building UI.
+
+Open `design/neopact-brand-system/visual-guide.html` after cloning to preview the guide, or [download the standalone kit](design/neopact-brand-system.zip). Use the supplied SVG logos and retain the bundled font licenses. [Palette research](design/neopact-brand-system/PALETTE-RESEARCH.md) distinguishes measured readability from conversion hypotheses.
 ## Conversations, needs and human review
 
 Open a negotiation to follow the agents' actual messages, questions, replies and explanations. Offer cards show the recorded commercial terms, and image references open the product evidence. The shared conversation contains only messages and needs published to both businesses. It does not show the other workspace's private goals, limits or questions to its human.
