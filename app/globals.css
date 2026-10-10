@@ -1100,6 +1100,7 @@ summary {
 }
 .guidance-form {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   margin-top: 20px;
 }
@@ -1109,6 +1110,7 @@ summary {
 .guidance-form textarea {
   display: block;
   width: 100%;
+  min-width: 0;
   min-height: 110px;
   resize: vertical;
   padding: 12px;
@@ -1126,12 +1128,16 @@ summary {
 }
 .guidance-suggestions {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 .guidance-suggestions button {
   text-align: left;
   font-weight: normal;
   justify-self: start;
+  white-space: normal;
+  max-width: 100%;
+  line-height: 1.5;
 }
 .guidance-actions {
   display: flex;

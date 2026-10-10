@@ -2,6 +2,37 @@ import { expect, test } from "@playwright/test";
 import { mockMarketplace } from "./fixtures/guidance";
 
 for (const role of ["buyer", "seller"] as const) {
+  test(`${role} composer controls stay inside the dialog on a narrow screen`, async ({
+    page,
+  }) => {
+    await mockMarketplace(page, role);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto("/?view=approvals&room=room-1");
+    const modal = page.getByRole("dialog");
+    await modal.getByRole("button", { name: "Negotiate more" }).click();
+    await modal
+      .getByRole("textbox", { name: "Tell your agent what to try" })
+      .fill("Keep my delivery date while trying a better price.");
+    const bounds = await modal.boundingBox();
+    expect(bounds).not.toBeNull();
+    for (const control of await modal
+      .locator(".guidance-box textarea, .guidance-box button")
+      .all()) {
+      const controlBounds = await control.boundingBox();
+      expect(
+        controlBounds,
+        (await control.textContent()) || "textarea",
+      ).not.toBeNull();
+      expect(controlBounds!.x).toBeGreaterThanOrEqual(bounds!.x + 16);
+      expect(controlBounds!.x + controlBounds!.width).toBeLessThanOrEqual(
+        bounds!.x + bounds!.width - 16,
+      );
+    }
+    expect(await modal.evaluate((element) => element.scrollWidth)).toBe(
+      await modal.evaluate((element) => element.clientWidth),
+    );
+  });
+
   test(`${role} can privately request a new negotiation and see its progress`, async ({
     page,
   }) => {
