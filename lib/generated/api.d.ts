@@ -669,7 +669,7 @@ export interface paths {
     };
     /**
      * Negotiations Context
-     * @description Read a participant's room with only that party's private rules, current allowed actions and negotiation limits.
+     * @description Read participant dialogue, explicitly shared needs and only the selected workspace's private rules, brief, requirement blockers, guidance and owner questions. Includes allowed actions and remaining conversation/offer allowances. Offer review snapshots preserve the exact needs considered when that offer was created.
      *
      *     Returns `context` and `status_code` (200). All failures use `error` and the matching HTTP `status_code`. Requires an authorized workspace membership and applicable role/scopes.
      */
@@ -704,6 +704,56 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/negotiations/{room_id}/messages": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Negotiations Messages
+     * @description Read paginated public dialogue and offer explanations for a participant room, optionally filtered by run. Private owner questions, briefs and guidance are excluded.
+     *
+     *     Returns `messages` and `status_code` (200). All failures use `error` and the matching HTTP `status_code`. Requires an authorized workspace membership and applicable role/scopes.
+     */
+    get: operations["negotiations_messages"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/negotiations/{room_id}/brief": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Negotiations Brief
+     * @description Read only the selected workspace's private business goals and server-evaluated needs. Agents may read but cannot edit or waive needs.
+     *
+     *     Returns `brief` and `status_code` (200). All failures use `error` and the matching HTTP `status_code`. Requires an authorized workspace membership and applicable role/scopes.
+     */
+    get: operations["negotiations_brief"];
+    /**
+     * Negotiations Brief Update
+     * @description An owner user (browser or CLI, never agent) replaces its versioned private brief and explicitly shareable needs. Requires expected_version, expected_brief_version and Idempotency-Key. Starts a new bounded attempt and invalidates prior claims, offers and approvals. Unsupported hard needs block agreement until an owner explicitly resolves them. This operation does not answer private questions or call an LLM.
+     *
+     *     Returns `brief` and `status_code` (200). All failures use `error` and the matching HTTP `status_code`. Requires an authorized workspace membership and applicable role/scopes.
+     */
+    put: operations["negotiations_brief_update"];
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/negotiations/{room_id}/actions": {
     parameters: {
       query?: never;
@@ -715,7 +765,7 @@ export interface paths {
     put?: never;
     /**
      * Negotiations Act
-     * @description Submit a structured, policy-checked action with the active claim_token, expected_version and stable Idempotency-Key. Agreement moves to human approval; it never creates an order directly.
+     * @description Submit dialogue, structured terms, own-offer revisions or private owner questions using an active claim, expected_version, pending guidance_id and stable Idempotency-Key. Dialogue is bounded and cannot create contractual terms. Hard unmet/unverified needs block acceptance; agents cannot waive them. Accepting the exact current counterparty offer moves to both human approvals and never creates an order directly.
      *
      *     Returns `action` and `status_code` (200). All failures use `error` and the matching HTTP `status_code`. Requires an authorized workspace membership and applicable role/scopes.
      */
@@ -964,6 +1014,12 @@ export interface components {
       role?: ("buyer" | "seller") | null;
       /** Run */
       run?: number | null;
+      /** Purpose */
+      purpose?: ("question" | "answer" | "tradeoff" | "explanation") | null;
+      /** Reply To Action Id */
+      reply_to_action_id?: string | null;
+      /** Image Ids */
+      image_ids?: string[];
     };
     /** ActionInput */
     ActionInput: {
@@ -974,6 +1030,8 @@ export interface components {
       type:
         | "propose"
         | "counter"
+        | "revise"
+        | "message"
         | "accept"
         | "decline"
         | "request_clarification"
@@ -993,6 +1051,16 @@ export interface components {
       offer_id?: string | null;
       /** Topic */
       topic?: ("specifications" | "delivery" | "images" | "quantity") | null;
+      /** Message */
+      message?: string | null;
+      /** Purpose */
+      purpose?: ("question" | "answer" | "tradeoff" | "explanation") | null;
+      /** Reply To Action Id */
+      reply_to_action_id?: string | null;
+      /** Image Ids */
+      image_ids?: string[];
+      /** Human Question */
+      human_question?: string | null;
     };
     /** ActionResult */
     ActionResult: {
@@ -1008,6 +1076,12 @@ export interface components {
       role?: ("buyer" | "seller") | null;
       /** Run */
       run?: number | null;
+      /** Purpose */
+      purpose?: ("question" | "answer" | "tradeoff" | "explanation") | null;
+      /** Reply To Action Id */
+      reply_to_action_id?: string | null;
+      /** Image Ids */
+      image_ids?: string[];
       /** Room Id */
       room_id: string;
       /**
@@ -1152,6 +1226,25 @@ export interface components {
        */
       caption: string;
     };
+    /** BriefInput */
+    BriefInput: {
+      /** Expected Version */
+      expected_version: number;
+      /** Expected Brief Version */
+      expected_brief_version: number;
+      /**
+       * Goals
+       * @default
+       */
+      goals: string;
+      /**
+       * Shareable Needs
+       * @default
+       */
+      shareable_needs: string;
+      /** Requirements */
+      requirements?: components["schemas"]["RequirementInput"][];
+    };
     /** BrowserLoginResponse */
     BrowserLoginResponse: {
       session: components["schemas"]["SessionResult"];
@@ -1161,6 +1254,17 @@ export interface components {
        * @constant
        */
       status_code: 200;
+    };
+    /** BusinessBrief */
+    BusinessBrief: {
+      /** Version */
+      version: number;
+      /** Goals */
+      goals: string;
+      /** Shareable Needs */
+      shareable_needs: string;
+      /** Requirements */
+      requirements: components["schemas"]["Requirement"][];
     };
     /** BuyerContextRules */
     BuyerContextRules: {
@@ -1493,6 +1597,27 @@ export interface components {
       created_at: string;
       /** Applied At */
       applied_at: string | null;
+    };
+    /** HumanQuestion */
+    HumanQuestion: {
+      /** Id */
+      id: string;
+      /** Question */
+      question: string;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "pending" | "answered";
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Answered At */
+      answered_at: string | null;
+      /** Answer Guidance Id */
+      answer_guidance_id: string | null;
     };
     /** ImageAsset */
     ImageAsset: {
@@ -1857,6 +1982,15 @@ export interface components {
       human_guidance: components["schemas"]["HumanGuidance"][];
       /** Can Request Guidance */
       can_request_guidance: boolean;
+      private_brief: components["schemas"]["BusinessBrief"];
+      /** Shared Briefs */
+      shared_briefs: components["schemas"]["SharedBrief"][];
+      /** Human Questions */
+      human_questions: components["schemas"]["HumanQuestion"][];
+      /** Can Edit Brief */
+      can_edit_brief: boolean;
+      /** Requirement Blockers */
+      requirement_blockers: string[];
       /** Approval Url */
       approval_url: string;
       /**
@@ -1884,10 +2018,36 @@ export interface components {
       counteroffers_per_side: number;
       /** Clarification Turns */
       clarification_turns: number;
+      /** Conversation Turns */
+      conversation_turns: number;
+      /** Conversation Turns Remaining */
+      conversation_turns_remaining: number;
+      /** Offer Actions Remaining */
+      offer_actions_remaining: number;
     };
     /** NegotiationsActResponse */
     NegotiationsActResponse: {
       action: components["schemas"]["ActionResult"];
+      /**
+       * Status Code
+       * @description Equals the HTTP response status.
+       * @constant
+       */
+      status_code: 200;
+    };
+    /** NegotiationsBriefResponse */
+    NegotiationsBriefResponse: {
+      brief: components["schemas"]["BusinessBrief"];
+      /**
+       * Status Code
+       * @description Equals the HTTP response status.
+       * @constant
+       */
+      status_code: 200;
+    };
+    /** NegotiationsBriefUpdateResponse */
+    NegotiationsBriefUpdateResponse: {
+      brief: components["schemas"]["BusinessBrief"];
       /**
        * Status Code
        * @description Equals the HTTP response status.
@@ -1918,6 +2078,16 @@ export interface components {
     /** NegotiationsGuidanceResponse */
     NegotiationsGuidanceResponse: {
       negotiation: components["schemas"]["Room"];
+      /**
+       * Status Code
+       * @description Equals the HTTP response status.
+       * @constant
+       */
+      status_code: 200;
+    };
+    /** NegotiationsMessagesResponse */
+    NegotiationsMessagesResponse: {
+      messages: components["schemas"]["Page_RoomActivity_"];
       /**
        * Status Code
        * @description Equals the HTTP response status.
@@ -1980,6 +2150,9 @@ export interface components {
       created_at: string;
       /** Approvals */
       approvals: components["schemas"]["Approval"][];
+      private_brief_review?: components["schemas"]["BusinessBrief"] | null;
+      /** Shared Brief Review */
+      shared_brief_review?: components["schemas"]["SharedBrief"][];
     };
     /** Order */
     Order: {
@@ -2008,6 +2181,9 @@ export interface components {
        * @constant
        */
       status: "confirmed_demo";
+      private_brief_review?: components["schemas"]["BusinessBrief"] | null;
+      /** Shared Brief Review */
+      shared_brief_review?: components["schemas"]["SharedBrief"][];
     };
     /** OrdersResponse */
     OrdersResponse: {
@@ -2055,6 +2231,17 @@ export interface components {
     Page_PurchaseRequest_: {
       /** Items */
       items: components["schemas"]["PurchaseRequest"][];
+      /** Total */
+      total: number;
+      /** Offset */
+      offset: number;
+      /** Limit */
+      limit: number;
+    };
+    /** Page[RoomActivity] */
+    Page_RoomActivity_: {
+      /** Items */
+      items: components["schemas"]["RoomActivity"][];
       /** Total */
       total: number;
       /** Offset */
@@ -2517,6 +2704,116 @@ export interface components {
        */
       status_code: 200;
     };
+    /** Requirement */
+    Requirement: {
+      /** Id */
+      id: string;
+      /** Label */
+      label: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "hard" | "preference";
+      /**
+       * Field
+       * @enum {string}
+       */
+      field:
+        | "quantity"
+        | "material"
+        | "stackable"
+        | "destination"
+        | "delivery_date"
+        | "total"
+        | "deposit_percent"
+        | "unit_price"
+        | "unsupported";
+      /**
+       * Operator
+       * @enum {string}
+       */
+      operator: "eq" | "lte" | "gte";
+      /** Value */
+      value: string | number | boolean | null;
+      /** Shareable */
+      shareable: boolean;
+      /**
+       * Resolution
+       * @enum {string}
+       */
+      resolution: "open" | "waived";
+      /** Resolution Note */
+      resolution_note?: string | null;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "met" | "unmet" | "unverified" | "waived";
+      /** Evidence */
+      evidence: components["schemas"]["RequirementEvidence"][];
+      /** Blocks Agreement */
+      blocks_agreement: boolean;
+    };
+    /** RequirementEvidence */
+    RequirementEvidence: {
+      /**
+       * Source
+       * @enum {string}
+       */
+      source: "offer" | "product" | "request";
+      /** Path */
+      path: string;
+      /** Value */
+      value: string | number | boolean;
+    };
+    /** RequirementInput */
+    RequirementInput: {
+      /** Id */
+      id: string;
+      /** Label */
+      label: string;
+      /**
+       * Kind
+       * @enum {string}
+       */
+      kind: "hard" | "preference";
+      /**
+       * Field
+       * @enum {string}
+       */
+      field:
+        | "quantity"
+        | "material"
+        | "stackable"
+        | "destination"
+        | "delivery_date"
+        | "total"
+        | "deposit_percent"
+        | "unit_price"
+        | "unsupported";
+      /**
+       * Operator
+       * @default eq
+       * @enum {string}
+       */
+      operator: "eq" | "lte" | "gte";
+      /** Value */
+      value?: string | number | boolean | null;
+      /**
+       * Shareable
+       * @default false
+       */
+      shareable: boolean;
+      /**
+       * Resolution
+       * @default open
+       * @enum {string}
+       */
+      resolution: "open" | "waived";
+      /** Resolution Note */
+      resolution_note?: string | null;
+    };
     /** RevokedCredential */
     RevokedCredential: {
       /** Id */
@@ -2593,6 +2890,15 @@ export interface components {
       human_guidance: components["schemas"]["HumanGuidance"][];
       /** Can Request Guidance */
       can_request_guidance: boolean;
+      private_brief: components["schemas"]["BusinessBrief"];
+      /** Shared Briefs */
+      shared_briefs: components["schemas"]["SharedBrief"][];
+      /** Human Questions */
+      human_questions: components["schemas"]["HumanQuestion"][];
+      /** Can Edit Brief */
+      can_edit_brief: boolean;
+      /** Requirement Blockers */
+      requirement_blockers: string[];
       /** Approval Url */
       approval_url: string;
     };
@@ -2613,6 +2919,8 @@ export interface components {
        * Format: date-time
        */
       at: string;
+      /** Run */
+      run: number;
     };
     /** RuleRevision */
     RuleRevision: {
@@ -2710,6 +3018,20 @@ export interface components {
     SessionResult: {
       /** Ok */
       ok: boolean;
+    };
+    /** SharedBrief */
+    SharedBrief: {
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "buyer" | "seller";
+      /** Version */
+      version: number;
+      /** Shareable Needs */
+      shareable_needs: string;
+      /** Requirements */
+      requirements: components["schemas"]["Requirement"][];
     };
     /** StockInput */
     StockInput: {
@@ -7060,6 +7382,365 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["NegotiationsClaimResponse"];
+        };
+      };
+      /** @description Malformed request or unsupported action. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Role, scope, workspace, browser approval or CSRF check failed. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Resource does not exist or is not visible to this workspace. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description HTTP method is not supported by this resource. */
+      405: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Stale version, conflicting state, active claim or idempotency conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Request body or image exceeds the configured limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Input validation, commercial policy or eligibility check failed. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Rate limit exceeded. Retry after the current rate window. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unexpected server failure. Details are not disclosed. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  negotiations_messages: {
+    parameters: {
+      query?: {
+        run?: number | null;
+        limit?: number;
+        offset?: number;
+      };
+      header?: {
+        /** @description Select a user membership. A workspace-bound agent cannot select another workspace. */
+        "X-Workspace-ID"?: string;
+      };
+      path: {
+        room_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NegotiationsMessagesResponse"];
+        };
+      };
+      /** @description Malformed request or unsupported action. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Role, scope, workspace, browser approval or CSRF check failed. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Resource does not exist or is not visible to this workspace. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description HTTP method is not supported by this resource. */
+      405: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Stale version, conflicting state, active claim or idempotency conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Request body or image exceeds the configured limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Input validation, commercial policy or eligibility check failed. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Rate limit exceeded. Retry after the current rate window. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unexpected server failure. Details are not disclosed. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  negotiations_brief: {
+    parameters: {
+      query?: never;
+      header?: {
+        /** @description Select a user membership. A workspace-bound agent cannot select another workspace. */
+        "X-Workspace-ID"?: string;
+      };
+      path: {
+        room_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NegotiationsBriefResponse"];
+        };
+      };
+      /** @description Malformed request or unsupported action. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Role, scope, workspace, browser approval or CSRF check failed. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Resource does not exist or is not visible to this workspace. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description HTTP method is not supported by this resource. */
+      405: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Stale version, conflicting state, active claim or idempotency conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Request body or image exceeds the configured limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Input validation, commercial policy or eligibility check failed. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Rate limit exceeded. Retry after the current rate window. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unexpected server failure. Details are not disclosed. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  negotiations_brief_update: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Required stable key for this logical write. Retry an identical request with the same key; a changed operation or body requires a new key. */
+        "Idempotency-Key": string;
+        /** @description Select a user membership. A workspace-bound agent cannot select another workspace. */
+        "X-Workspace-ID"?: string;
+        /** @description Required for browser writes; must match a configured allowed origin. */
+        Origin?: string;
+        /** @description Required for browser writes; copy the readable market_csrf cookie. Bearer writes do not use CSRF. */
+        "X-CSRF-Token"?: string;
+      };
+      path: {
+        room_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["BriefInput"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NegotiationsBriefUpdateResponse"];
         };
       };
       /** @description Malformed request or unsupported action. */

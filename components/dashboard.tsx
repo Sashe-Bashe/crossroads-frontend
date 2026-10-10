@@ -49,6 +49,8 @@ import {
   type EffectiveRules,
 } from "@/lib/api";
 import { NegotiationGuidance } from "./negotiation-guidance";
+import { NegotiationConversation } from "./negotiation-conversation";
+import { OfferNeedsReview, PrivateBrief } from "./negotiation-needs";
 
 type View =
   | "overview"
@@ -1162,6 +1164,11 @@ export default function Dashboard() {
               {error}
             </div>
           )}
+          <NegotiationConversation
+            key={`conversation:${me.workspace.id}:${selectedRoom.id}`}
+            room={selectedRoom}
+          />
+          <PrivateBrief room={selectedRoom} />
           {selectedRoom.current_offer ? (
             <>
               <div className="offer-heading">
@@ -1180,6 +1187,7 @@ export default function Dashboard() {
                 </button>
               </div>
               <TermsGrid offer={selectedRoom.current_offer} />
+              <OfferNeedsReview offer={selectedRoom.current_offer} />
               {selectedRoom.offers.length > 1 && (
                 <div className="change-note">
                   <strong>Since the previous offer</strong>
@@ -1248,7 +1256,11 @@ export default function Dashboard() {
                       )}
                       <span>
                         {i === 0 ? "Buyer" : "Seller"}:{" "}
-                        {approved ? "approved" : "awaiting approval"}
+                        {approved
+                          ? "approved"
+                          : selectedRoom.state === "awaiting_approval"
+                            ? "awaiting approval"
+                            : "agent agreement pending"}
                       </span>
                     </div>
                   );
@@ -1257,6 +1269,10 @@ export default function Dashboard() {
               {selectedRoom.state === "awaiting_approval" && me.can_approve && (
                 <div className="approval-box">
                   <h3>Review before you authorize</h3>
+                  <p className="approval-request-note">
+                    Both agents agreed. Each business must now review and
+                    approve this offer.
+                  </p>
                   <p>
                     This is offer v{selectedRoom.current_offer.version},
                     expiring{" "}
@@ -1271,7 +1287,8 @@ export default function Dashboard() {
                       checked={reviewed}
                       onChange={(e) => setReviewed(e.target.checked)}
                     />
-                    I have reviewed this offer and its product evidence.
+                    I have reviewed this offer, its needs review and product
+                    evidence.
                   </label>
                   <div className="approval-actions">
                     <button
@@ -1338,22 +1355,6 @@ export default function Dashboard() {
               });
             }}
           />
-          <h3>Negotiation activity</h3>
-          <div className="activity-list compact">
-            {selectedRoom.activity.map((a) => (
-              <div className="event" key={a.id}>
-                <span className="event-dot">
-                  <ArrowLeftRight size={14} />
-                </span>
-                <div>
-                  <strong>{human(a.type)}</strong>
-                  <small>
-                    {a.role} · {new Date(a.at).toLocaleString()}
-                  </small>
-                </div>
-              </div>
-            ))}
-          </div>
           {selectedRoom.reason && (
             <p className="quiet-note">{selectedRoom.reason}</p>
           )}
@@ -1369,6 +1370,13 @@ export default function Dashboard() {
             {selectedOrder.buyer} → {selectedOrder.seller}
           </p>
           <TermsGrid offer={selectedOrder.offer} />
+          <OfferNeedsReview
+            offer={{
+              ...selectedOrder.offer,
+              private_brief_review: selectedOrder.private_brief_review,
+              shared_brief_review: selectedOrder.shared_brief_review,
+            }}
+          />
           <Gallery product={selectedOrder.offer.product} />
           <h3>Recorded approvals</h3>
           {selectedOrder.offer.approvals.map((a) => (

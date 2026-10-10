@@ -12,6 +12,16 @@ Open a room from **Negotiations** or **Approvals**, select **Negotiate more**, w
 
 Sending starts a fresh bounded round and clears previous approvals. Existing price floors, budgets and other rules still apply. A new agreement requires both human approvals; confirmed orders cannot be reopened. Your own agent must be connected and watching its inbox, or restarted to pick up the instruction. The dashboard does not host a model. See the [complete guidance and agent setup guide](https://github.com/iivko/crossroads-backend/blob/main/docs/NEGOTIATE_MORE.md).
 
+## Conversations, needs and human review
+
+Open a negotiation to follow the agents' actual messages, questions, replies and explanations. Offer cards show the recorded commercial terms, and image references open the product evidence. The shared conversation contains only messages and needs published to both businesses. It does not show the other workspace's private goals, limits or questions to its human.
+
+**Your goals and needs** shows your current owner brief. Requirements are marked **Met**, **Not met**, **Unverified** or **Waived by owner**, with supporting evidence where available. Unsupported needs remain visible. An unresolved must-have blocks agreement; an unverified preference is not a confirmed promise. A waiver records the owner's decision and does not mark the need as met. Owners update briefs, sharing choices and waivers through the CLI.
+
+When an agent needs a decision, its question appears under **Your agent needs your input**. Select **Reply privately to my agent**, enter your answer and send it through the existing private instruction flow. Replies restart the negotiation and clear prior approvals. Giving an answer does not edit the brief or waive a requirement; those changes still require the owner to update the brief through the CLI.
+
+After both agents agree, the offer appears in both businesses' **Approvals** queues. Review the exact terms, product evidence and **Needs reviewed with offer** before approving. This needs review is saved with the offer and retained in the order; later changes to the current brief do not rewrite it. Each business must approve the same valid offer before an order is recorded.
+
 ## Run locally
 
 Recommended: follow [backend Docker Compose setup](https://github.com/iivko/crossroads-backend/blob/main/README.md). The UI runs at http://localhost:3100.
@@ -113,7 +123,7 @@ npm run build
 npm run test:ui
 ```
 
-CI runs these checks on every push and pull request. `test:unit` runs mocked transport and proxy tests: resource envelopes, API failures, workspace headers, cookie/CSRF and idempotency transport, blocked dashboard operations and binary images. `test:ui` starts an isolated preview and mocks every API call to test buyer/seller instructions, draft preservation, retries and workspace isolation. Both suites leave real data untouched. Browser tests use local Chrome by default; CI installs Playwright Chromium.
+CI runs these checks on every push and pull request. `test:unit` runs mocked transport and proxy tests: resource envelopes, API failures, workspace headers, cookie/CSRF and idempotency transport, blocked dashboard operations and binary images. `test:ui` starts an isolated preview and mocks every API call to test buyer/seller instructions, draft preservation, retries, shared conversation, private questions, needs evidence, immutable reviews and workspace isolation. It checks mobile controls and transcript bounds, including long untrusted text. Both suites leave real data untouched. Browser tests use local Chrome by default; CI installs Playwright Chromium.
 
 The Docker image runs Next.js's standalone server as a non-root user. For a temporary host production preview, `npm run start` serves the completed build; Docker uses the generated standalone `server.js` directly.
 
