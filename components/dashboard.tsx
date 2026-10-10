@@ -25,7 +25,6 @@ import {
   ShoppingBag,
   Sparkles,
   Terminal,
-  TrendingUp,
   X,
   RefreshCw,
   Activity,
@@ -455,42 +454,60 @@ export default function Dashboard() {
     setError("");
     history.replaceState(null, "", `/?view=${next}`);
   }
-  function roomTable(rows: Room[]) {
+  function roomTable(rows: Room[], emphasize = false) {
     return rows.length ? (
-      <div className="table-wrap">
-        <table>
+      <div
+        className="table-wrap"
+        role="region"
+        aria-label="Negotiation offers"
+        tabIndex={0}
+      >
+        <table className="room-table">
           <thead>
             <tr>
-              <th>Request / supplier</th>
-              <th>Status</th>
-              <th>Current total</th>
-              <th>Deposit</th>
-              <th>Delivery</th>
-              <th />
+              <th scope="col">Request / supplier</th>
+              <th scope="col">Status</th>
+              <th scope="col" className="numeric">
+                Current total
+              </th>
+              <th scope="col" className="numeric">
+                Deposit
+              </th>
+              <th scope="col">Delivery</th>
+              <th scope="col" className="row-action" aria-label="Actions" />
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id}>
-                <td>
+                <td className="record-cell">
                   <strong>{r.request.title}</strong>
                   <span>{r.supplier}</span>
+                  {r.current_offer && (
+                    <span className="mobile-offer-summary" aria-hidden="true">
+                      <b>{money(r.current_offer.terms.total)}</b>
+                      <span>
+                        {r.current_offer.terms.deposit_percent}% deposit ·
+                        Delivery {r.current_offer.terms.delivery_date}
+                      </span>
+                    </span>
+                  )}
                 </td>
                 <td>
                   <Badge value={r.state} />
                 </td>
-                <td>
+                <td className="numeric">
                   {r.current_offer ? money(r.current_offer.terms.total) : "—"}
                 </td>
-                <td>
+                <td className="numeric">
                   {r.current_offer
                     ? `${r.current_offer.terms.deposit_percent}%`
                     : "—"}
                 </td>
                 <td>{r.current_offer?.terms.delivery_date || "—"}</td>
-                <td>
+                <td className="row-action">
                   <button
-                    className="text-button"
+                    className={emphasize ? "button primary" : "text-button"}
                     onClick={() => void openRoom(r)}
                   >
                     Review <ArrowUpRight size={16} />
@@ -739,11 +756,12 @@ export default function Dashboard() {
               <p>{subtitles[view]}</p>
             </div>
             <button
-              className="button secondary"
+              className="button quiet"
+              aria-label="Refresh"
               onClick={() => void load(me).catch(() => {})}
             >
-              <RefreshCw size={16} />
-              Refresh
+              <RefreshCw size={16} aria-hidden="true" />
+              <span className="refresh-label">Refresh</span>
             </button>
           </div>
           {error && !selectedRoom && (
@@ -770,7 +788,7 @@ export default function Dashboard() {
                 >
                   <span>
                     Active negotiations
-                    <ArrowLeftRight size={18} />
+                    <ArrowUpRight size={16} aria-hidden="true" />
                   </span>
                   <strong>{active.length}</strong>
                   <small>Conversations in progress</small>
@@ -782,7 +800,7 @@ export default function Dashboard() {
                 >
                   <span>
                     Needs your review
-                    <ShieldCheck size={18} />
+                    <ArrowUpRight size={16} aria-hidden="true" />
                   </span>
                   <strong>{myReviews.length}</strong>
                   <small>
@@ -797,7 +815,7 @@ export default function Dashboard() {
                 >
                   <span>
                     Demo orders
-                    <ShoppingBag size={18} />
+                    <ArrowUpRight size={16} aria-hidden="true" />
                   </span>
                   <strong>{orders.length}</strong>
                   <small>Approved by both businesses</small>
@@ -811,7 +829,7 @@ export default function Dashboard() {
                     {me.workspace.role === "seller"
                       ? "Agreed sales value"
                       : "Agreed purchase value"}
-                    <TrendingUp size={18} />
+                    <ArrowUpRight size={16} aria-hidden="true" />
                   </span>
                   <strong className="money-stat">{money(total)}</strong>
                   <small>Internal demo order totals</small>
@@ -821,16 +839,10 @@ export default function Dashboard() {
                 Current snapshot · up to 100 recent negotiations and 100 orders.
                 Demo totals do not represent payments.
               </p>
-              <WorkspacePulse
-                rooms={rooms}
-                workspace={me.workspace}
-                onOpenRoom={(room) => void openRoom(room)}
-                onNavigate={navigate}
-              />
               <div className="section-heading">
                 <div>
-                  <h2>At the decision point</h2>
-                  <p>Terms your agents have brought to the table.</p>
+                  <h2>Offers awaiting approval</h2>
+                  <p>Review the exact terms before you decide.</p>
                 </div>
                 <button
                   className="text-button"
@@ -839,13 +851,22 @@ export default function Dashboard() {
                   All approvals <ArrowRight size={16} />
                 </button>
               </div>
-              <section className="panel">
-                {roomTable(pending.slice(0, 4))}
+              <section
+                className="panel decision-panel"
+                aria-label="Offers awaiting approval"
+              >
+                {roomTable(pending.slice(0, 4), true)}
               </section>
+              <WorkspacePulse
+                rooms={rooms}
+                workspace={me.workspace}
+                onOpenRoom={(room) => void openRoom(room)}
+                onNavigate={navigate}
+              />
               <div className="overview-bottom">
                 <section>
                   <div className="section-heading">
-                    <h2>From the catalogue</h2>
+                    <h2>Catalogue preview</h2>
                     <button
                       className="text-button"
                       onClick={() => navigate("products")}
@@ -984,9 +1005,9 @@ export default function Dashboard() {
                     <thead>
                       <tr>
                         <th>Purchase request</th>
-                        <th>Quantity</th>
+                        <th className="numeric">Quantity</th>
                         <th>Destination</th>
-                        <th>Private budget</th>
+                        <th className="numeric">Private budget</th>
                         <th>Status</th>
                         <th />
                       </tr>
@@ -998,9 +1019,9 @@ export default function Dashboard() {
                             <strong>{r.title}</strong>
                             <span>Delivery by {r.latest_delivery}</span>
                           </td>
-                          <td>{r.quantity}</td>
+                          <td className="numeric">{r.quantity}</td>
                           <td>{r.destination}</td>
-                          <td>{money(r.max_total || 0)}</td>
+                          <td className="numeric">{money(r.max_total || 0)}</td>
                           <td>
                             <Badge value={r.state} />
                           </td>
@@ -1056,7 +1077,7 @@ export default function Dashboard() {
                       <tr>
                         <th>Product / order</th>
                         <th>Counterparty</th>
-                        <th>Total</th>
+                        <th className="numeric">Total</th>
                         <th>Confirmed</th>
                         <th />
                       </tr>
@@ -1071,7 +1092,9 @@ export default function Dashboard() {
                           <td>
                             {me.workspace.role === "buyer" ? o.seller : o.buyer}
                           </td>
-                          <td>{money(o.offer.terms.total)}</td>
+                          <td className="numeric">
+                            {money(o.offer.terms.total)}
+                          </td>
                           <td>{new Date(o.created_at).toLocaleDateString()}</td>
                           <td>
                             <button

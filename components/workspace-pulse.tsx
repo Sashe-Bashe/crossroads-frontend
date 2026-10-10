@@ -190,19 +190,27 @@ export function WorkspacePulse({
                       type="button"
                       onClick={() => onOpenRoom(room)}
                     >
-                      <span className="pulse-room-title">
-                        <strong>{room.request.title}</strong>
-                        <ChevronRight size={20} aria-hidden="true" />
+                      <span className="pulse-room-identity">
+                        <span className="pulse-room-title">
+                          <strong>{room.request.title}</strong>
+                        </span>
+                        <span className="pulse-room-supplier">
+                          {room.supplier}
+                        </span>
                       </span>
-                      <span className="pulse-room-supplier">
-                        {room.supplier}
+                      <span className="pulse-room-progress">
+                        <span
+                          className={`pulse-room-state pulse-room-state-${summary.tone}`}
+                        >
+                          {summary.label}
+                        </span>
+                        <span className="pulse-room-next">{summary.next}</span>
                       </span>
-                      <span
-                        className={`pulse-room-state pulse-room-state-${summary.tone}`}
-                      >
-                        {summary.label}
-                      </span>
-                      <span className="pulse-room-next">{summary.next}</span>
+                      <ChevronRight
+                        className="pulse-room-chevron"
+                        size={20}
+                        aria-hidden="true"
+                      />
                     </button>
                   </li>
                 );

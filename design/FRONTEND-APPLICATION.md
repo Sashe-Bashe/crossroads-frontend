@@ -10,7 +10,7 @@ OWN-WORLD: Inherit the merged neopact kit: Manrope, canonical SVGs, warm canvas,
 
 STORY: See what needs attention, inspect agent work, review exact terms, then make a deliberate decision. Private guidance stays separate from shared conversation; demo values and snapshot limits are explicit.
 
-FIRST VIEWPORT: The existing sidebar frames a clear title and four clickable metrics. A current-state distribution and recent negotiation drilldowns follow. The review metric carries the strongest evergreen emphasis. Sign-in retains its split composition with the approved brand statement, workflow explanation and one primary sign-in action.
+FIRST VIEWPORT: A compact sidebar frames a working title and four clickable metrics in one open strip. Offers awaiting approval come next, with commercial values aligned and an explicit Review action. A compact state distribution and recent negotiation drilldowns follow as supporting context. The review metric uses a subtle neutral fill and evergreen text; the Review action carries the strongest emphasis. Sign-in retains its split composition with the approved brand statement, workflow explanation and one primary sign-in action.
 
 FORM: Inherited-direction exception. The user's confirmed request applies an already merged brand kit throughout the existing frontend and adds a local metrics section. `reference/new-work.md` section 3, “Extend an existing surface,” says to inherit world and composition without a concept tournament. No new visual world or whole new page was selected, and no concept seed or roll was run. This is recorded as an inherited extension, not fabricated seed provenance.
 
@@ -48,3 +48,7 @@ Closed rooms must not produce agent work alerts. Ordered rooms can become invali
 The existing API, private guidance and conversation suites protect backend semantics. Added UI coverage checks brand identity, own-approval counts, bounded snapshot labels and sync failure/recovery. Visual review covers desktop and mobile login, overview and negotiation details using labeled synthetic fixtures.
 
 After deployment, assess time to identify a waiting decision, successful sign-in, review completion, navigation errors and accidental approval attempts. Establish a baseline before comparing designs. Color alone does not establish conversion lift.
+
+## Craft refinement — 10 October 2026
+
+The user requested a research-backed Impeccable/Taste pass. The existing identity remains authoritative; this changes hierarchy and density within the same product. See `CRAFT-RESEARCH.md` for four sources and the distinction between evidence and implementation judgment. The actual refinement uses a compact metric band, a decision-first overview, aligned commercial columns, shorter recent-record rows, and descriptive section headings. No unsupported metrics or backend behavior were added.

@@ -39,10 +39,10 @@ typography:
     letterSpacing: "-0.04em"
   headline:
     fontFamily: "Manrope, Arial, sans-serif"
-    fontSize: "2rem"
+    fontSize: "1.5rem"
     fontWeight: 700
     lineHeight: 1.2
-    letterSpacing: "-0.035em"
+    letterSpacing: "-0.02em"
   title:
     fontFamily: "Manrope, Arial, sans-serif"
     fontSize: "1.25rem"
@@ -126,10 +126,10 @@ components:
     padding: "0.25rem 0.5rem"
     typography: "{typography.label}"
   metric:
-    backgroundColor: "{colors.surface}"
+    backgroundColor: "{colors.canvas}"
     textColor: "{colors.text}"
-    rounded: "{rounded.card}"
-    padding: "1.5rem"
+    rounded: "0"
+    padding: "1.25rem 1.5rem"
   snapshot:
     backgroundColor: "{colors.surface}"
     textColor: "{colors.text}"
@@ -142,7 +142,7 @@ components:
 
 **Creative North Star: "Terms aligned. Business moving."**
 
-The inherited neopact system is composed, precise and cooperative. Warm canvas, white working surfaces and evergreen actions keep commercial terms readable; dark ink and sparse lime distinguish the brand introduction and selected summaries.
+The inherited neopact system is composed, precise and cooperative. Warm canvas, white working surfaces and evergreen actions keep commercial terms readable; dark ink and sparse lime distinguish the brand introduction. The workspace gives commercial decisions priority through layout and restrained emphasis.
 
 This document records the frontend extension, not a replacement visual world. Its authority remains the supplied brand kit and its precedence contract. It describes implemented patterns only; reference-kit examples do not establish application capabilities.
 
@@ -159,7 +159,7 @@ Warm neutrals support sustained reading; evergreen gives controls weight without
 
 ### Primary
 - **Evergreen action:** primary buttons, active navigation and snapshot actions; hover and active tokens supply feedback.
-- **Ink:** main text, sign-in brand panel and the review metric.
+- **Ink:** main text and sign-in brand panel. The review metric uses action-colored text on the subtle neutral surface.
 
 ### Secondary
 - **Pact lime:** selected words and canonical reversed brand artwork on the dark introduction, plus text selection with ink foreground.
@@ -186,9 +186,9 @@ The sign-in display contracts to `clamp(32px, 8.2vw, 48px)` on mobile; its autho
 
 ## Layout
 
-Spacing follows the inherited 4px rhythm; frontmatter includes only steps consumed by the application. The desktop shell has a fixed 256px sidebar and a content area capped at 1600px, with 48px top and 40px horizontal padding. At 1150px the sidebar becomes 240px and content padding becomes 32px/24px. At 760px navigation becomes a drawer and content padding becomes 24px/16px; the compact topbar uses the canonical 32px standalone mark. Below 400px the topbar utilities wrap; below 359px metrics become one column.
+Spacing follows the inherited 4px rhythm; frontmatter includes only steps consumed by the application. The desktop shell has a fixed 240px sidebar, a 64px topbar and a content area capped at 1600px, with 32px top and 40px horizontal padding. At 1150px content padding becomes 32px/24px. At 760px navigation becomes a drawer and content padding becomes 24px/16px; the compact topbar uses the canonical 32px standalone mark. Below 400px the topbar utilities wrap; below 359px metrics become one column.
 
-Metrics use four columns, then two at 1150px. The snapshot pairs a 0.85fr distribution with a 1.25fr record list; at 1050px it stacks and its legend becomes two columns. At 520px the legend returns to one column and region padding becomes 20px. Product cards shift to two columns at 1150px and one at 760px. Tables retain their scrollable reading regions.
+Metrics form a single open band with shared dividers: four columns, then two at 1150px. The offers awaiting approval table immediately follows. The supporting snapshot pairs a 0.7fr distribution with a 1.3fr record list; at 1050px it stacks and its legend becomes two columns. At 520px the legend returns to one column. Snapshot regions use 16px padding. Recent records pair title/supplier with status/next step on desktop, then stack these groups at 520px. Product cards shift to two columns at 1150px and one at 760px. Tables retain their scrollable reading regions.
 
 Sign-in uses a dark/light split of 1.08fr to 1fr, then a vertical composition at 760px; the form is capped at 400px. Its workflow list and footer are suppressed on mobile while the core proposition and form remain.
 
@@ -206,7 +206,7 @@ Controls have restrained corners; cards are softer and dialogs use the hero radi
 
 ### Buttons
 
-Solid primary actions use evergreen and white; secondary actions use a strong border and white fill, shifting to subtle neutral on hover. Primary pressed feedback uses the action-active token. Buttons have a 44px minimum target, 14px bold text, 12px/16px padding and a 120ms transition. Text actions are semibold evergreen and underline on hover. Icon-only controls retain 44px targets and accessible labels. Disabled buttons use full-opacity muted text and neutral fill. Sign-in deliberately uses 52px minimum controls.
+Solid primary actions use evergreen and white; secondary actions use a strong border and white fill, shifting to subtle neutral on hover. Primary pressed feedback uses the action-active token. Buttons have a 44px minimum target, 14px bold text, 12px/16px padding and a 120ms transition. Text actions are semibold evergreen and underline on hover. Icon-only controls retain 44px targets and accessible labels. The quiet Refresh action shares the heading row; its text is hidden at the mobile breakpoint while the icon and accessible name remain. Disabled buttons use full-opacity muted text and neutral fill. Sign-in deliberately uses 52px minimum controls.
 
 ### Inputs / Fields
 
@@ -222,11 +222,15 @@ Static badges pair semantic foreground and tint tokens with 12px semibold text, 
 
 ### Cards / Containers
 
-Metric buttons use white, a one-pixel divider border, card radius and 24px padding; hover strengthens the border. The review metric uses ink with inverse text, then action-hover on hover. Large numbers use tabular figures. The snapshot is one bordered container with a canvas distribution inset and white recent-record region, avoiding redundant nested cards.
+Metric buttons sit in one open strip, divided by shared one-pixel rules and no individual radius. Desktop padding is 20px/24px, with aligned outer edges; compact layouts use 16px. The review metric has subtle-neutral fill and semibold/bold action-colored text. Arrow affordances lead to the matching view. Comparable numbers use tabular figures. The snapshot remains one bordered container with a canvas distribution inset and white recent-record region. Its 8px segmented bar supports the exact count list.
 
 ### Negotiation snapshot
 
 The segmented bar is backed by a labeled count list, so its color is supplementary. Recent negotiation records present the primary title, supporting supplier/detail, status and next-step copy in a consistent hierarchy. Whole record buttons lead to the source record; text actions lead to related views. Empty state copy retains the same hierarchy. Scope and refresh metadata remain visible because these are loaded-record snapshots, not all-time analytics.
+
+### Commercial tables
+
+Amounts, quantities and percentages use explicit numeric column classes, aligned right with tabular figures. Request identity can wrap within 200–320px; supplier metadata remains secondary. Rows use 16px vertical padding and retain visible actions. The overview uses a primary Review button, while list views use quiet row actions. The negotiation table is a keyboard-focusable scroll region; its action column stays available during horizontal scrolling. On mobile, the identity cell repeats the exact current total, deposit percentage and delivery date so terms are visible before scrolling. This duplicate summary is hidden from assistive technology; the original labeled table columns remain accessible.
 
 ### Brand and assets
 
@@ -251,4 +255,4 @@ Navigation transforms use 180ms; button, navigation and metric feedback use 120m
 - **Don't** introduce gradients, glow, glass, decorative AI motifs or new accent colors.
 - **Don't** turn backend turn claims into agent connection-health indicators or treat demo orders as payment.
 
-Not canonized: dormant legacy eyebrow rules in the global stylesheet are not a reusable typography role. Incidental sign-in measurements outside the 4px rhythm remain local composition values, not new spacing tokens. This documentation pass does not repair source drift or claim a fresh visual review.
+Not canonized: dormant legacy eyebrow rules in the global stylesheet are not a reusable typography role. Incidental sign-in measurements outside the 4px rhythm remain local composition values, not new spacing tokens. The current refinement has a bounded desktop/mobile visual review and a separate research note in `design/CRAFT-RESEARCH.md`.
