@@ -1,0 +1,38 @@
+{
+  "brand": "neopact",
+  "version": "1.0.0",
+  "date": "2026-10-10",
+  "symbol": {
+    "viewBox": [
+      0,
+      0,
+      64,
+      64
+    ],
+    "paths": [
+      "M8 56V8H20L35 23L25 33L22 30V56Z",
+      "M56 8V56H44L29 41L39 31L42 34V8Z"
+    ],
+    "visibleBounds": [
+      8,
+      8,
+      56,
+      56
+    ]
+  },
+  "wordmark": {
+    "font": "Manrope",
+    "weight": 650,
+    "trackingEm": -0.015,
+    "outlined": true
+  },
+  "colors": {
+    "ink": "#132F2B",
+    "lime": "#D9F26F",
+    "white": "#FFFFFF"
+  },
+  "primaryMinimumWidthPx": 140,
+  "symbolMinimumPx": 24,
+  "faviconExceptionPx": 16,
+  "clearSpace": "One quarter of visible symbol height on each side; additional to SVG canvas padding."
+}
