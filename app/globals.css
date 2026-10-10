@@ -2194,3 +2194,19 @@ summary {
     outline-color: Highlight;
   }
 }
+
+.preview-toolbar:has(.demo-preview) {
+  padding: 12px 40px;
+  background: var(--paper);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+@media (max-width: 700px) {
+  .preview-toolbar:has(.demo-preview) {
+    padding: 12px 20px;
+    justify-content: center;
+  }
+}

@@ -4,7 +4,30 @@ Next.js App Router, React and TypeScript. The dashboard shows the product catalo
 
 Human reviewers inspect immutable terms, product evidence, changes from the previous offer, current validity and both approval states. Approval requires checking the exact-offer acknowledgement. The API rechecks the offer, policies and inventory when each approval arrives. A stale open dialog cannot approve a newer offer accidentally.
 
-Catalogue editing, request creation, rule configuration and agent negotiation actions use the [CLI](https://github.com/iivko/crossroads-cli/blob/main/README.md). This dashboard's write proxy allows browser login, logout, approval decisions and private human negotiation instructions.
+Catalogue editing, request creation, rule configuration and agent negotiation actions use the [CLI](https://github.com/iivko/crossroads-cli/blob/main/README.md). The browser proxy allows sign-in, logout, approval decisions, private human instructions, scoped credential management and explicit identity linking. The backend enforces the permissions for each operation.
+
+## Buyer/seller preview and live activity
+
+The local preview has explicit **Buyer preview** (Forma Studio) and **Seller preview** (Forma Supply) account buttons. These are separately authenticated demo accounts; the normal workspace selector still lists only actual memberships. Set the following server-only values in `.env.local` when using the seeded loopback API:
+
+```dotenv
+NEOPACT_DEMO_PREVIEW=true
+NEOPACT_DEMO_PASSWORD=local-market-demo
+# Optional absolute backend directory used in local MCP configuration:
+NEOPACT_MCP_PROJECT_DIR=/absolute/path/to/crossroads-backend
+```
+
+The preview routes refuse non-loopback origins/upstreams and remain disabled by default. Restart the frontend after changing settings. **Run live demo** executes one bounded, scripted trading session through real scoped backend credentials. It creates one 80-chair request, records offers and counteroffers over roughly 30 seconds, and stops for human approval. It does not call an LLM, approve orders or process payments. Keep the page open during the run. Temporary credentials are revoked when it finishes; interrupted negotiations remain inspectable.
+
+The trading floor polls every five seconds, separates your business from trading partners, resolves prices against historical offers, shows incoming requests and next-turn availability, and highlights only new backend events. Pause stops the displayed feed while the workspace keeps updating. Activity is participant-visible, not a public cross-business trade stream. The full audit trail remains expandable on Activity.
+
+## Agent and sign-in connections
+
+**Connections** creates a named, seven-day workspace credential and shows its MCP configuration once. Read-only access is the default; **Allow agent trading** additionally permits role-appropriate request/product actions and negotiation. Credentials can be revoked. A valid credential does not establish that a client is currently running.
+
+The companion backend now includes a working local stdio MCP server with 13 tools; install with `uv sync --extra mcp`. Claude Desktop, Claude Code, Codex and compatible local clients can use the generated configuration. See the backend's `mcp_server/README.md`. It does not yet offer a hosted ChatGPT connector: remote OAuth, per-user authorization and public HTTPS are still required.
+
+Google and ChatGPT account linking/sign-in are implemented in the backend. Configure registered provider credentials and exact callback URLs as described in `docs/identity.md` in the backend checkout. Buttons show **Setup required** until configured. ChatGPT website sign-in currently requires OpenAI commercial trial access; a ChatGPT subscription/API key is not an OAuth client. Sign-in identities are separate from trading-agent access. Provider callback errors are explained without exposing token material.
 
 ## Negotiate more
 

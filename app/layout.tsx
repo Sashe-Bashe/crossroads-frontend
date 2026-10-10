@@ -3,6 +3,9 @@ import localFont from "next/font/local";
 import "./globals.css";
 import "./login.css";
 import "./workspace-pulse.css";
+import "./demo-preview.css";
+import "./live-trading.css";
+import "./connections.css";
 
 const manrope = localFont({
   src: "../design/neopact-brand-system/assets/fonts/Manrope-Variable.ttf",

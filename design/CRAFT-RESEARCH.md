@@ -1,6 +1,6 @@
 # Neopact commerce workspace: focused craft research
 
-Researched 10 October 2026. Scope: the existing overview, review queue, metrics and backend activity. Preserve the approved Neopact identity and backend semantics. These sources support usability choices; they do not prove a conversion uplift for this product.
+Researched 10 October 2026. Scope: the overview, review queue, metrics, live participant activity, local role preview, agent connections and identity sign-in. Preserve the approved Neopact identity and backend semantics. These sources support usability choices; they do not prove a conversion uplift for this product.
 
 ## Evidence
 
@@ -9,9 +9,9 @@ Researched 10 October 2026. Scope: the existing overview, review queue, metrics 
 - [NN/g: The Layer-Cake Pattern of Scanning Content on the Web](https://www.nngroup.com/articles/layer-cake-pattern-scanning/), 4 August 2019: eyetracking evidence favors descriptive, consistently distinct headings and clear proximity between each heading and its content. Excessive heading emphasis can resemble advertising. Retrieved with Obscura.
 - [NN/g: Dashboards — Making Charts and Graphs Easier to Understand](https://www.nngroup.com/articles/dashboards-preattentive/), June 2017: operational dashboards need to communicate critical information quickly. Length and position enable easier quantitative comparison than area or angle; large gauges consume space with limited information. Retrieved with Obscura.
 
-## Five evidence-informed recommendations
+## Earlier hierarchy pass: five evidence-informed recommendations
 
-1. **Make the next human decision the first content section.** After a compact metric strip, place the review table before the negotiation snapshot. Current source puts the larger snapshot first. A future queue refinement could sort rows still needing this business's approval before rows waiting on the counterparty. This visual pass preserves the API's existing row order and approval semantics. This ordering is our application of SAP task relevance and NN/g operational urgency; it is not a prescribed layout from either source.
+1. **Make the next human decision the first content section.** After a compact metric strip, place the review table before the negotiation snapshot. The pre-refinement layout placed the larger snapshot first. A future queue refinement could sort rows still needing this business's approval before rows waiting on the counterparty. This visual pass preserves the API's existing row order and approval semantics. This ordering is our application of SAP task relevance and NN/g operational urgency; it is not a prescribed layout from either source.
 
 2. **Compress the metric container, retain its precision.** Use one calm band with four aligned values, lighter dividers, and restrained padding. Keep the single review emphasis and clickable drilldowns. Put the 100-record limit and demo-total qualification in one readable line immediately below. Do not invent time-series, revenue growth or always-online indicators. The specific band is an inference from the current data and hierarchy, not a source-mandated component.
 
@@ -24,3 +24,24 @@ Researched 10 October 2026. Scope: the existing overview, review queue, metrics 
 ## Validation boundary
 
 Check the resulting desktop and narrow layouts with real Docker data, long request titles and zero/nonzero review states. Preserve keyboard targets, visible focus, readable muted text and named sections. Evaluate the first viewport by whether a user can identify their outstanding decision, its supplier and its commercial terms. Research cannot certify the aesthetic result: visual inspection of the actual build remains required.
+
+
+## Live participant activity and connections
+
+Additional primary references checked 10 October 2026:
+
+- [OpenAI: Sign in with ChatGPT on your website](https://developers.openai.com/siwc/website): describes website OIDC sign-in with authorization code, PKCE and verified identity claims. Access is currently limited to selected commercial partners. Application: show configuration requirements honestly; keep website identity separate from a hosted MCP connection. A ChatGPT subscription alone is not the application's OAuth registration.
+- [Google: OpenID Connect](https://developers.google.com/identity/openid-connect/openid-connect): requires application credentials, registered callbacks and server verification of identity tokens. Application: explicit account linking and provider configuration state; Google branding or a button alone does not make authentication available.
+- [MCP: Connect to local servers](https://modelcontextprotocol.io/docs/2026-07-28/develop/connect-local-servers): documents connecting a desktop host to a local MCP process through client configuration. Application: supply scoped local stdio configuration and state that a separately hosted connector is not shipped. The 13-tool server is this project's implementation, not a capability inferred from the guide.
+
+The user asked for the satisfaction of seeing activity, comparing it to visible checkout transactions. Our implementation judgment is to put the participant trading board after the compact metrics, before the approval table, with an explicit review metric and room drilldowns. This updates the earlier decision-first ordering to emphasize observable agent work while retaining exact-offer human decisions. The analogy does not establish a conversion effect, authorize disclosure of unrelated businesses' trades, or justify synthetic traffic presented as live.
+
+The board uses action, lifecycle and order records already visible to the workspace, refreshes with the five-second workspace poll, identifies freshness and preserves the previous snapshot on failed refresh. Filters separate this business, its partners and recorded demo deals; “Pause” freezes the feed for reading without stopping the backend. A small subtle-neutral arrival treatment is triggered by new record IDs and respects reduced motion. The expandable workspace audit trail remains below the Activity board, and human lifecycle notices remain distinct from agent actions. The next-turn queue shows role and claim state rather than claiming that an agent is online.
+
+Explicit “Buyer preview” and “Seller preview” controls solve the demo-account discoverability issue: Forma Studio and Forma Supply are separate accounts, not interchangeable memberships. The loopback-only, disabled-by-default preview gate and the plainly labeled scripted “Run live demo” are application decisions. The run writes real local requests and negotiation actions, then stops for authorized people to approve; it never manufactures payment activity.
+
+Connections separates three concepts in the UI: a person's sign-in identity, the selected business workspace, and the access granted to an external agent. Read-only credentials are the initial choice; trading is opt-in. Credential validity is reported separately from runtime health. Hosted ChatGPT/remote MCP remains a stated deployment requirement, not an implied connected feature. New provider configuration and a real provider login need operator credentials and a separate smoke test.
+
+## Current evidence boundary
+
+This extension record was derived from the shipped source components and styles. It adds no claim of user-tested conversion improvement or successful Google/ChatGPT production sign-in. Technical tests, browser review and deployment readiness should be reported with their actual scope, separately from research rationale.

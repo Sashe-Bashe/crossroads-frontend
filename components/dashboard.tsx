@@ -30,6 +30,7 @@ import {
   Activity,
   ClipboardList,
   ImageOff,
+  Plug,
 } from "lucide-react";
 import {
   api,
@@ -52,6 +53,11 @@ import { NegotiationConversation } from "./negotiation-conversation";
 import { OfferNeedsReview, PrivateBrief } from "./negotiation-needs";
 import { Brand } from "./brand";
 import { WorkspacePulse } from "./workspace-pulse";
+import { LiveTradingBoard } from "./live-trading-board";
+import { Connections, ProviderSignIn } from "./connections";
+import { DemoPreviewSwitch } from "./demo-preview-switch";
+import { DemoTradingControl } from "./demo-trading-control";
+import { switchDemoRole, type DemoRole } from "@/lib/demo-preview";
 
 type View =
   | "overview"
@@ -60,7 +66,8 @@ type View =
   | "negotiations"
   | "approvals"
   | "orders"
-  | "activity";
+  | "activity"
+  | "connections";
 const titles: Record<View, string> = {
   overview: "Your commerce, in view.",
   products: "The product catalogue.",
@@ -69,6 +76,7 @@ const titles: Record<View, string> = {
   approvals: "The final decision is yours.",
   orders: "Agreed. Approved. Recorded.",
   activity: "Every action, accounted for.",
+  connections: "Your agents, connected.",
 };
 const subtitles: Record<View, string> = {
   overview: "Follow your agents’ work and step in when it matters.",
@@ -79,6 +87,7 @@ const subtitles: Record<View, string> = {
     "Review the exact terms. Both businesses approve before an order is confirmed.",
   orders: "A lasting record of each deal and the people who approved it.",
   activity: "A shared timeline of the actions recorded in your workspace.",
+  connections: "Manage agent access and the identities you use to sign in.",
 };
 const icons = {
   overview: LayoutDashboard,
@@ -88,6 +97,7 @@ const icons = {
   approvals: ShieldCheck,
   orders: ShoppingBag,
   activity: Activity,
+  connections: Plug,
 };
 function Badge({ value }: { value: string }) {
   return <span className={`badge badge-${value}`}>{human(value)}</span>;
@@ -224,6 +234,7 @@ export default function Dashboard() {
   const [guidanceBusy, setGuidanceBusy] = useState(false);
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
   const [syncFailed, setSyncFailed] = useState(false);
+  const [demoRunning, setDemoRunning] = useState(false);
   const workspaceRef = useRef<string | null>(null);
   const selectedRoomRef = useRef<Room | null>(null);
   const loadSequence = useRef(0);
@@ -298,6 +309,31 @@ export default function Dashboard() {
     }
   }, [load]);
   useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.has("identity") || params.has("identity_error")) {
+      localStorage.removeItem("market_workspace");
+      const failures: Record<string, string> = {
+        account_not_linked:
+          "This identity is not linked yet. Sign in with your password, then link it in Connections.",
+        identity_already_linked:
+          "This identity is already linked to another account.",
+        link_session_expired:
+          "Your linking session expired. Sign in and try linking again.",
+        provider_declined:
+          "Sign-in was cancelled at the provider. You can try again.",
+      };
+      const failure = params.get("identity_error");
+      if (failure)
+        setError(
+          failures[failure] ||
+            "Sign-in could not be verified. Please start again.",
+        );
+      else if (params.get("identity") === "linked")
+        setNotice("Sign-in identity linked to your account.");
+      params.delete("identity");
+      params.delete("identity_error");
+      window.history.replaceState({}, "", `/?${params}`);
+    }
     void initialize();
   }, [initialize]);
   useEffect(() => {
@@ -324,13 +360,54 @@ export default function Dashboard() {
       setBusy(false);
     }
   }
+  function clearSnapshot() {
+    workspaceRef.current = null;
+    ++loadSequence.current;
+    setMe(null);
+    setWorkspaces([]);
+    setProducts([]);
+    setRooms([]);
+    setOrders([]);
+    setEvents([]);
+    setRequests([]);
+    setSelectedRoom(null);
+    setSelectedProduct(null);
+    setSelectedRequest(null);
+    setSelectedOrder(null);
+    setGuardrails(null);
+    setGuidanceBusy(false);
+    setReviewed(false);
+    setSearch("");
+    setNotice("");
+    setLastSynced(null);
+    setSyncFailed(false);
+    localStorage.removeItem("market_workspace");
+  }
+  async function previewRole(role: DemoRole) {
+    setBusy(true);
+    setError("");
+    clearSnapshot();
+    setBooting(true);
+    window.history.replaceState({}, "", "/?view=overview");
+    setView("overview");
+    try {
+      await switchDemoRole(role);
+      await initialize();
+    } catch (cause) {
+      await initialize();
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+      setBooting(false);
+    }
+  }
   async function signOut() {
     workspaceRef.current = null;
     ++loadSequence.current;
     try {
       await api.signOut();
     } finally {
-      setMe(null);
+      clearSnapshot();
       setSelectedRoom(null);
       setSelectedOrder(null);
       setSelectedProduct(null);
@@ -586,6 +663,11 @@ export default function Dashboard() {
                 {error}
               </div>
             )}
+            <ProviderSignIn />
+            <DemoPreviewSwitch
+              busy={busy}
+              onSwitch={(role) => void previewRole(role)}
+            />
             <label>
               Email address
               <input
@@ -642,6 +724,7 @@ export default function Dashboard() {
           <div>
             <select
               aria-label="Workspace"
+              disabled={demoRunning}
               value={me.workspace.id}
               onChange={(e) =>
                 void switchWorkspace(e.target.value).catch((e) =>
@@ -686,7 +769,14 @@ export default function Dashboard() {
               <Terminal size={18} />
               <strong>Your agent workflow</strong>
             </div>
-            <p>Your agents operate through the CLI. Follow their work here.</p>
+            <p>Connect a client and follow your agents’ work here.</p>
+            <button
+              type="button"
+              className="text-button"
+              onClick={() => navigate("connections")}
+            >
+              Manage connections <ArrowRight size={14} />
+            </button>
           </div>
           <button className="profile" onClick={() => void signOut()}>
             <span className="avatar small">
@@ -749,6 +839,22 @@ export default function Dashboard() {
             <span className="avatar small">{me.user.name[0]}</span>
           </div>
         </header>
+        <div className="preview-toolbar">
+          <DemoTradingControl
+            key={me.workspace.id}
+            disabled={busy}
+            onRunningChange={setDemoRunning}
+            onComplete={() => {
+              void load(me).catch(() => {});
+            }}
+          />
+          <DemoPreviewSwitch
+            currentRole={me.workspace.role}
+            busy={busy}
+            disabled={demoRunning}
+            onSwitch={(role) => void previewRole(role)}
+          />
+        </div>
         <main className="content">
           <div className="page-heading">
             <div>
@@ -839,6 +945,17 @@ export default function Dashboard() {
                 Current snapshot · up to 100 recent negotiations and 100 orders.
                 Demo totals do not represent payments.
               </p>
+              <LiveTradingBoard
+                key={me.workspace.id}
+                rooms={rooms}
+                events={events}
+                orders={orders}
+                workspace={me.workspace}
+                synced={lastSynced}
+                stale={syncFailed}
+                onOpenRoom={(room) => void openRoom(room)}
+                onConnect={() => navigate("connections")}
+              />
               <div className="section-heading">
                 <div>
                   <h2>Offers awaiting approval</h2>
@@ -1118,39 +1235,62 @@ export default function Dashboard() {
             </section>
           )}
           {view === "activity" && (
-            <section className="panel activity-list">
-              {events.map((e) => (
-                <div className="event" key={e.id}>
-                  <span className="event-dot">
-                    <Activity size={16} />
-                  </span>
-                  <div>
-                    <strong>{human(e.type)}</strong>
-                    <small>
-                      Record {e.resource_id.slice(0, 8)} · Actor{" "}
-                      {e.actor_id.slice(0, 12)}
-                    </small>
-                    {Object.keys(e.data).length > 0 && (
-                      <span className="event-data">
-                        {Object.entries(e.data)
-                          .map(
-                            ([k, v]) =>
-                              `${human(k)}: ${Array.isArray(v) ? v.join(", ") : String(v)}`,
-                          )
-                          .join(" · ")}
-                      </span>
-                    )}
+            <LiveTradingBoard
+              key={me.workspace.id}
+              expanded
+              rooms={rooms}
+              events={events}
+              orders={orders}
+              workspace={me.workspace}
+              synced={lastSynced}
+              stale={syncFailed}
+              onOpenRoom={(room) => void openRoom(room)}
+              onConnect={() => navigate("connections")}
+            />
+          )}
+          {view === "activity" && (
+            <details className="audit-detail">
+              <summary>
+                Workspace audit trail{" "}
+                <small>Up to 100 recent recorded events</small>
+              </summary>
+              <section className="panel activity-list">
+                {events.map((e) => (
+                  <div className="event" key={e.id}>
+                    <span className="event-dot">
+                      <Activity size={16} />
+                    </span>
+                    <div>
+                      <strong>{human(e.type)}</strong>
+                      <small>
+                        Record {e.resource_id.slice(0, 8)} · Actor{" "}
+                        {e.actor_id.slice(0, 12)}
+                      </small>
+                      {Object.keys(e.data).length > 0 && (
+                        <span className="event-data">
+                          {Object.entries(e.data)
+                            .map(
+                              ([k, v]) =>
+                                `${human(k)}: ${Array.isArray(v) ? v.join(", ") : String(v)}`,
+                            )
+                            .join(" · ")}
+                        </span>
+                      )}
+                    </div>
+                    <time>{new Date(e.at).toLocaleString()}</time>
                   </div>
-                  <time>{new Date(e.at).toLocaleString()}</time>
-                </div>
-              ))}
-              {events.length === 0 && (
-                <Empty
-                  title="A clean slate"
-                  detail="Your workspace’s recorded actions will appear here."
-                />
-              )}
-            </section>
+                ))}
+                {events.length === 0 && (
+                  <Empty
+                    title="A clean slate"
+                    detail="Your workspace’s recorded actions will appear here."
+                  />
+                )}
+              </section>{" "}
+            </details>
+          )}
+          {view === "connections" && (
+            <Connections key={me.workspace.id} workspace={me.workspace} />
           )}
           <footer className="page-footer">
             <span>neopact / terms aligned. business moving.</span>
