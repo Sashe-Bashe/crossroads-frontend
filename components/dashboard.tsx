@@ -729,7 +729,7 @@ export default function Dashboard() {
                           <strong>{p.name}</strong>
                           <span>{p.supplier}</span>
                           <b>
-                            {money(p.unit_price)} <small>/ unit</small>
+                            {money(p.unit_price)} <small>asking / unit</small>
                           </b>
                         </button>
                       );
@@ -1002,7 +1002,7 @@ export default function Dashboard() {
           <p className="description">{selectedProduct.description}</p>
           <div className="terms-grid">
             <div>
-              <span>Unit price</span>
+              <span>Asking price per unit</span>
               <strong>{money(selectedProduct.unit_price)}</strong>
             </div>
             <div>

@@ -2010,7 +2010,10 @@ export interface components {
        */
       category: "chairs";
       attributes: components["schemas"]["Attributes"];
-      /** Unit Price */
+      /**
+       * Unit Price
+       * @description Public asking price in integer EUR cents. The seller's private minimum is configured separately in product negotiation rules.
+       */
       unit_price: number;
       /** Delivery Charge */
       delivery_charge: number;
@@ -2056,7 +2059,10 @@ export interface components {
        */
       category: "chairs";
       attributes: components["schemas"]["Attributes"];
-      /** Unit Price */
+      /**
+       * Unit Price
+       * @description Public asking price in integer EUR cents. The seller's private minimum is configured separately in product negotiation rules.
+       */
       unit_price: number;
       /** Delivery Charge */
       delivery_charge: number;
@@ -2101,7 +2107,10 @@ export interface components {
        */
       category: "chairs";
       attributes: components["schemas"]["Attributes"];
-      /** Unit Price */
+      /**
+       * Unit Price
+       * @description Public asking price in integer EUR cents. The seller's private minimum is configured separately in product negotiation rules.
+       */
       unit_price: number;
       /** Delivery Charge */
       delivery_charge: number;
@@ -2580,6 +2589,7 @@ export interface components {
     SellerPolicy: {
       /**
        * Min Unit Price
+       * @description Private minimum acceptable price per unit in EUR cents. The seller agent may negotiate higher prices; counterparties cannot read this rule.
        * @default 1
        */
       min_unit_price: number;
