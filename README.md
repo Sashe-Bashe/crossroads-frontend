@@ -4,7 +4,13 @@ Next.js App Router, React and TypeScript. The dashboard shows the product catalo
 
 Human reviewers inspect immutable terms, product evidence, changes from the previous offer, current validity and both approval states. Approval requires checking the exact-offer acknowledgement. The API rechecks the offer, policies and inventory when each approval arrives. A stale open dialog cannot approve a newer offer accidentally.
 
-Catalogue editing, request creation, rule configuration and negotiation actions use the [CLI](https://github.com/iivko/crossroads-cli/blob/main/README.md). This dashboard's write proxy allows only browser login, logout and approval decisions.
+Catalogue editing, request creation, rule configuration and agent negotiation actions use the [CLI](https://github.com/iivko/crossroads-cli/blob/main/README.md). This dashboard's write proxy allows browser login, logout, approval decisions and private human negotiation instructions.
+
+## Negotiate more
+
+Open a room from **Negotiations** or **Approvals**, select **Negotiate more**, write what your agent should try, then select **Send to my agent**. Both buyer and seller approvers can do this. The instruction is private to your workspace and agent, and the dashboard shows when it is waiting or has been handled.
+
+Sending starts a fresh bounded round and clears previous approvals. Existing price floors, budgets and other rules still apply. A new agreement requires both human approvals; confirmed orders cannot be reopened. Your own agent must be connected and watching its inbox, or restarted to pick up the instruction. The dashboard does not host a model. See the [complete guidance and agent setup guide](https://github.com/iivko/crossroads-backend/blob/main/docs/NEGOTIATE_MORE.md).
 
 ## Run locally
 
@@ -104,9 +110,10 @@ npm run typecheck
 npm run format:check
 npm run test:unit
 npm run build
+npm run test:ui
 ```
 
-CI runs these checks on every push and pull request. `test:unit` runs mocked transport and proxy tests: resource envelopes, API failures, current workspace headers, cookie/CSRF approval transport, blocked dashboard operations and binary image passthrough. These tests need no server, browser installation or demo data and never approve real offers.
+CI runs these checks on every push and pull request. `test:unit` runs mocked transport and proxy tests: resource envelopes, API failures, workspace headers, cookie/CSRF and idempotency transport, blocked dashboard operations and binary images. `test:ui` starts an isolated preview and mocks every API call to test buyer/seller instructions, draft preservation, retries and workspace isolation. Both suites leave real data untouched. Browser tests use local Chrome by default; CI installs Playwright Chromium.
 
 The Docker image runs Next.js's standalone server as a non-root user. For a temporary host production preview, `npm run start` serves the completed build; Docker uses the generated standalone `server.js` directly.
 
@@ -118,7 +125,7 @@ Start the full stack and seed data. Prepare one pending deal using `uv run pytho
 npx playwright test workspace.spec.ts
 ```
 
-`npm test` runs both the safe mocked tests and this state-changing integration test. CI deliberately runs only `npm run test:unit`.
+`npm test` includes this state-changing integration test. CI runs the safe `test:unit` and `test:ui` suites instead; it never runs `workspace.spec.ts`.
 
 The integration test uses `/usr/bin/google-chrome` by default. Set `CHROME_PATH` to a Chrome/Chromium executable if needed, and `FRONTEND_URL` if the dashboard is elsewhere. It logs in as both demo users, downloads visible gallery images, reviews exact terms, approves the same offer twice, and verifies the persisted order. **It creates a demo order and allocates 80 chairs**; run it only against a disposable or explicitly seeded demo environment. The backend unit/integration suite uses separate schemas and does not consume demo stock.
 

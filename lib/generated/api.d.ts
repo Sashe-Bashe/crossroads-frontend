@@ -748,6 +748,28 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/negotiations/{room_id}/guidance": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Negotiations Guidance
+     * @description An authorized human browser approver privately directs their own external agent to negotiate again. Requires CSRF, expected_version and Idempotency-Key. Starts a fresh bounded attempt on that role's turn, revokes current claims and approvals, and permanently invalidates the previous offer. Text is visible only to the requesting workspace. Agents must acknowledge their latest pending guidance ID on their next successful action. The API does not start or call an LLM.
+     *
+     *     Returns `negotiation` and `status_code` (200). All failures use `error` and the matching HTTP `status_code`. Requires an authorized workspace membership and applicable role/scopes.
+     */
+    post: operations["negotiations_guidance"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/approvals/{room_id}": {
     parameters: {
       query?: never;
@@ -938,6 +960,10 @@ export interface components {
       topic?: ("specifications" | "delivery" | "images" | "quantity") | null;
       /** Message */
       message?: string | null;
+      /** Role */
+      role?: ("buyer" | "seller") | null;
+      /** Run */
+      run?: number | null;
     };
     /** ActionInput */
     ActionInput: {
@@ -957,6 +983,11 @@ export interface components {
       expected_version: number;
       /** Claim Token */
       claim_token: string;
+      /**
+       * Guidance Id
+       * @description The ID of your workspace's pending human guidance, required on the next successful action after reading it. Never echo the instruction text publicly.
+       */
+      guidance_id?: string | null;
       terms?: components["schemas"]["Terms"] | null;
       /** Offer Id */
       offer_id?: string | null;
@@ -973,6 +1004,10 @@ export interface components {
       topic?: ("specifications" | "delivery" | "images" | "quantity") | null;
       /** Message */
       message?: string | null;
+      /** Role */
+      role?: ("buyer" | "seller") | null;
+      /** Run */
+      run?: number | null;
       /** Room Id */
       room_id: string;
       /**
@@ -1398,6 +1433,16 @@ export interface components {
       /** Expected Version */
       expected_version: number;
     };
+    /** GuidanceInput */
+    GuidanceInput: {
+      /**
+       * Instruction
+       * @description Private direction to this workspace's external agent. Cannot override policies or authorize an order.
+       */
+      instruction: string;
+      /** Expected Version */
+      expected_version: number;
+    };
     /** Health */
     Health: {
       /**
@@ -1422,6 +1467,32 @@ export interface components {
        * @constant
        */
       status_code: 200;
+    };
+    /** HumanGuidance */
+    HumanGuidance: {
+      /** Id */
+      id: string;
+      /**
+       * Role
+       * @enum {string}
+       */
+      role: "buyer" | "seller";
+      /** Instruction */
+      instruction: string;
+      /**
+       * Status
+       * @enum {string}
+       */
+      status: "pending" | "applied" | "superseded";
+      /** Run */
+      run: number;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Applied At */
+      applied_at: string | null;
     };
     /** ImageAsset */
     ImageAsset: {
@@ -1533,6 +1604,8 @@ export interface components {
       can_act: boolean;
       /** Context Path */
       context_path: string;
+      /** Pending Guidance Id */
+      pending_guidance_id: string | null;
     };
     /** InboxResponse */
     InboxResponse: {
@@ -1777,6 +1850,13 @@ export interface components {
       invalid_reasons: string[];
       /** Activity */
       activity: components["schemas"]["RoomActivity"][];
+      /**
+       * Human Guidance
+       * @description Private guidance history belonging only to the selected workspace, newest first. Never share with the counterparty.
+       */
+      human_guidance: components["schemas"]["HumanGuidance"][];
+      /** Can Request Guidance */
+      can_request_guidance: boolean;
       /** Approval Url */
       approval_url: string;
       /**
@@ -1828,6 +1908,16 @@ export interface components {
     /** NegotiationsContextResponse */
     NegotiationsContextResponse: {
       context: components["schemas"]["NegotiationContext"];
+      /**
+       * Status Code
+       * @description Equals the HTTP response status.
+       * @constant
+       */
+      status_code: 200;
+    };
+    /** NegotiationsGuidanceResponse */
+    NegotiationsGuidanceResponse: {
+      negotiation: components["schemas"]["Room"];
       /**
        * Status Code
        * @description Equals the HTTP response status.
@@ -2496,6 +2586,13 @@ export interface components {
       invalid_reasons: string[];
       /** Activity */
       activity: components["schemas"]["RoomActivity"][];
+      /**
+       * Human Guidance
+       * @description Private guidance history belonging only to the selected workspace, newest first. Never share with the counterparty.
+       */
+      human_guidance: components["schemas"]["HumanGuidance"][];
+      /** Can Request Guidance */
+      can_request_guidance: boolean;
       /** Approval Url */
       approval_url: string;
     };
@@ -7207,6 +7304,131 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["NegotiationsRetryResponse"];
+        };
+      };
+      /** @description Malformed request or unsupported action. */
+      400: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Missing, expired or revoked authentication. */
+      401: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Role, scope, workspace, browser approval or CSRF check failed. */
+      403: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Resource does not exist or is not visible to this workspace. */
+      404: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description HTTP method is not supported by this resource. */
+      405: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Stale version, conflicting state, active claim or idempotency conflict. */
+      409: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Request body or image exceeds the configured limit. */
+      413: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Input validation, commercial policy or eligibility check failed. */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Rate limit exceeded. Retry after the current rate window. */
+      429: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+      /** @description Unexpected server failure. Details are not disclosed. */
+      500: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ErrorResponse"];
+        };
+      };
+    };
+  };
+  negotiations_guidance: {
+    parameters: {
+      query?: never;
+      header: {
+        /** @description Required stable key for this logical write. Retry an identical request with the same key; a changed operation or body requires a new key. */
+        "Idempotency-Key": string;
+        /** @description Select a user membership. A workspace-bound agent cannot select another workspace. */
+        "X-Workspace-ID"?: string;
+        /** @description Required for browser writes; must match a configured allowed origin. */
+        Origin: string;
+        /** @description Required for browser writes; copy the readable market_csrf cookie. Bearer writes do not use CSRF. */
+        "X-CSRF-Token": string;
+      };
+      path: {
+        room_id: string;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["GuidanceInput"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["NegotiationsGuidanceResponse"];
         };
       };
       /** @description Malformed request or unsupported action. */

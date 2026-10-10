@@ -48,6 +48,7 @@ import {
   type Offer,
   type EffectiveRules,
 } from "@/lib/api";
+import { NegotiationGuidance } from "./negotiation-guidance";
 
 type View =
   | "overview"
@@ -217,8 +218,18 @@ export default function Dashboard() {
     [guardrails, setGuardrails] = useState<EffectiveRules | null>(null);
   const [email, setEmail] = useState(""),
     [password, setPassword] = useState("");
+  const [guidanceBusy, setGuidanceBusy] = useState(false);
+  const workspaceRef = useRef<string | null>(null);
+  const selectedRoomRef = useRef<Room | null>(null);
+  const loadSequence = useRef(0);
+  selectedRoomRef.current = selectedRoom;
+  useEffect(() => {
+    setReviewed(false);
+  }, [selectedRoom?.id, selectedRoom?.version]);
   const load = useCallback(async (identity: Me) => {
-    const [ps, ns, os, es, rs] = await Promise.all([
+    const sequence = ++loadSequence.current;
+    const roomId = selectedRoomRef.current?.id;
+    const [ps, ns, os, es, rs, detail] = await Promise.all([
       api.products(),
       api.rooms(),
       api.orders(),
@@ -226,12 +237,24 @@ export default function Dashboard() {
       identity.workspace.role === "buyer"
         ? api.requests()
         : Promise.resolve([]),
+      roomId ? api.room(roomId) : Promise.resolve(null),
     ]);
+    if (
+      workspaceRef.current !== identity.workspace.id ||
+      sequence !== loadSequence.current
+    )
+      return;
     setProducts(ps);
     setRooms(ns);
     setOrders(os);
     setEvents(es);
     setRequests(rs);
+    if (detail)
+      setSelectedRoom((current) =>
+        current?.id === detail.id && current.version <= detail.version
+          ? detail
+          : current,
+      );
   }, []);
   const initialize = useCallback(async () => {
     try {
@@ -243,6 +266,7 @@ export default function Dashboard() {
         identity = await api.me();
       }
       setWorkspace(identity.workspace.id);
+      workspaceRef.current = identity.workspace.id;
       setMe(identity);
       setWorkspaces(await api.workspaces());
       await load(identity);
@@ -264,7 +288,9 @@ export default function Dashboard() {
   useEffect(() => {
     if (!me) return;
     const id = setInterval(() => {
-      void load(me).catch((e) => setError(e.message));
+      void load(me).catch((e) => {
+        if (workspaceRef.current === me.workspace.id) setError(e.message);
+      });
     }, 5000);
     return () => clearInterval(id);
   }, [me, load]);
@@ -284,6 +310,8 @@ export default function Dashboard() {
     }
   }
   async function signOut() {
+    workspaceRef.current = null;
+    ++loadSequence.current;
     try {
       await api.signOut();
     } finally {
@@ -291,21 +319,37 @@ export default function Dashboard() {
       setSelectedRoom(null);
       setSelectedOrder(null);
       setSelectedProduct(null);
+      setSelectedRequest(null);
+      setGuidanceBusy(false);
+      setBusy(false);
       localStorage.removeItem("market_workspace");
     }
   }
   async function switchWorkspace(id: string) {
+    workspaceRef.current = id;
+    ++loadSequence.current;
     setWorkspace(id);
     setSelectedRoom(null);
     setSelectedProduct(null);
     setSelectedRequest(null);
     setSelectedOrder(null);
     setError("");
+    setNotice("");
+    setGuardrails(null);
+    setGuidanceBusy(false);
+    setBusy(false);
+    setProducts([]);
+    setRooms([]);
+    setOrders([]);
+    setEvents([]);
+    setRequests([]);
     const identity = await api.me();
+    if (workspaceRef.current !== id) return;
     setMe(identity);
     await load(identity);
   }
   async function openRoom(room: Room) {
+    const workspaceId = workspaceRef.current;
     setSelectedRoom(room);
     setReviewed(false);
     setError("");
@@ -314,11 +358,16 @@ export default function Dashboard() {
       const r = await api.rules(
         me?.workspace.role === "seller" ? room.product_id : undefined,
       );
-      setGuardrails(r.effective);
+      if (
+        workspaceRef.current === workspaceId &&
+        selectedRoomRef.current?.id === room.id
+      )
+        setGuardrails(r.effective);
     } catch {}
   }
   async function decide(reject = false) {
     if (!selectedRoom?.current_offer || !me) return;
+    const workspaceId = me.workspace.id;
     setBusy(true);
     setError("");
     try {
@@ -328,6 +377,7 @@ export default function Dashboard() {
         selectedRoom.current_offer.id,
         selectedRoom.version,
       );
+      if (workspaceRef.current !== workspaceId) return;
       setNotice(
         reject
           ? "Offer rejected. Both agents can see your decision."
@@ -335,14 +385,25 @@ export default function Dashboard() {
             ? "Both businesses approved. Your demo order is confirmed."
             : "Your approval is recorded. Waiting for the other business.",
       );
-      setSelectedRoom(await api.room(selectedRoom.id));
+      await refreshSelectedRoom(selectedRoom.id);
       setReviewed(false);
       await load(me);
     } catch (e) {
-      setError((e as Error).message);
+      if (workspaceRef.current === workspaceId) setError((e as Error).message);
     } finally {
-      setBusy(false);
+      if (workspaceRef.current === workspaceId) setBusy(false);
     }
+  }
+  async function refreshSelectedRoom(roomId: string) {
+    const workspaceId = workspaceRef.current;
+    const updated = await api.room(roomId);
+    if (workspaceRef.current !== workspaceId) return;
+    setSelectedRoom((current) =>
+      current?.id === roomId && current.version <= updated.version
+        ? updated
+        : current,
+    );
+    setReviewed(false);
   }
   const pending = rooms.filter((r) => r.state === "awaiting_approval"),
     active = rooms.filter((r) =>
@@ -1086,6 +1147,7 @@ export default function Dashboard() {
           title={selectedRoom.request.title}
           onClose={() => {
             setSelectedRoom(null);
+            setGuidanceBusy(false);
             setError("");
           }}
         >
@@ -1108,10 +1170,9 @@ export default function Dashboard() {
                 <button
                   className="text-button"
                   onClick={() =>
-                    void openRoom(selectedRoom).then(async () => {
-                      setSelectedRoom(await api.room(selectedRoom.id));
-                      setReviewed(false);
-                    })
+                    void refreshSelectedRoom(selectedRoom.id).catch((e) =>
+                      setError(e.message),
+                    )
                   }
                 >
                   <RefreshCw size={14} />
@@ -1215,7 +1276,7 @@ export default function Dashboard() {
                   <div className="approval-actions">
                     <button
                       className="button secondary"
-                      disabled={busy || !reviewed}
+                      disabled={busy || guidanceBusy || !reviewed}
                       onClick={() => void decide(true)}
                     >
                       Reject offer
@@ -1224,6 +1285,7 @@ export default function Dashboard() {
                       className="button primary"
                       disabled={
                         busy ||
+                        guidanceBusy ||
                         !reviewed ||
                         !selectedRoom.valid ||
                         selectedRoom.current_offer.approvals.some(
@@ -1245,6 +1307,37 @@ export default function Dashboard() {
               detail={`The ${selectedRoom.next_role} agent can claim the next turn.`}
             />
           )}
+          <NegotiationGuidance
+            key={`${me.workspace.id}:${selectedRoom.id}`}
+            room={selectedRoom}
+            role={me.workspace.role}
+            disabled={busy}
+            onBusy={(value) => {
+              if (
+                workspaceRef.current === me.workspace.id &&
+                selectedRoomRef.current?.id === selectedRoom.id
+              )
+                setGuidanceBusy(value);
+            }}
+            onStale={() =>
+              workspaceRef.current === me.workspace.id
+                ? refreshSelectedRoom(selectedRoom.id)
+                : Promise.resolve()
+            }
+            onSubmitted={(updated) => {
+              if (workspaceRef.current !== me.workspace.id) return;
+              setSelectedRoom((current) =>
+                current?.id === updated.id && current.version <= updated.version
+                  ? updated
+                  : current,
+              );
+              setReviewed(false);
+              void load(me).catch((cause) => {
+                if (workspaceRef.current === me.workspace.id)
+                  setError(cause.message);
+              });
+            }}
+          />
           <h3>Negotiation activity</h3>
           <div className="activity-list compact">
             {selectedRoom.activity.map((a) => (

@@ -108,6 +108,43 @@ test("sign-in and sign-out use their generated request contracts", async () => {
   await api.signOut();
 });
 
+test("private human guidance sends a version and stable idempotency key with browser authentication", async () => {
+  const negotiation = { id: "room-123", human_guidance: [] };
+  const api = createDashboardApi(
+    createMarketplaceClient({
+      baseUrl,
+      workspace: () => "seller-workspace",
+      csrf: () => "human-csrf",
+      fetch: async (request) => {
+        expect(request.url).toBe(
+          `${baseUrl}/api/v1/negotiations/room-123/guidance`,
+        );
+        expect(request.method).toBe("POST");
+        expect(request.headers.get("X-CSRF-Token")).toBe("human-csrf");
+        expect(request.headers.get("Origin")).toBe(baseUrl);
+        expect(request.headers.get("Idempotency-Key")).toBe(
+          "stable-guidance-key",
+        );
+        expect(request.headers.get("X-Workspace-ID")).toBe("seller-workspace");
+        expect(request.headers.has("Authorization")).toBe(false);
+        expect(await request.json()).toEqual({
+          instruction: "Try a higher price.",
+          expected_version: 9,
+        });
+        return Response.json({ negotiation, status_code: 200 });
+      },
+    }),
+  );
+  expect(
+    await api.requestGuidance(
+      "room-123",
+      "Try a higher price.",
+      9,
+      "stable-guidance-key",
+    ),
+  ).toEqual(negotiation);
+});
+
 test("structured errors preserve the API message, HTTP status and machine code", async () => {
   const api = createDashboardApi(
     createMarketplaceClient({

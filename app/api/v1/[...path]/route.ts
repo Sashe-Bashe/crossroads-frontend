@@ -13,7 +13,7 @@ async function proxy(
     !isRead &&
     !(
       req.method === "POST" &&
-      /^(auth\/(session|logout)|approvals\/[^/]+\/(approve|reject))$/.test(
+      /^(auth\/(session|logout)|approvals\/[^/]+\/(approve|reject)|negotiations\/[^/]+\/guidance)$/.test(
         route,
       )
     )
@@ -37,6 +37,7 @@ async function proxy(
     "origin",
     "x-csrf-token",
     "x-workspace-id",
+    "idempotency-key",
   ]) {
     const value = req.headers.get(name);
     if (value) headers.set(name, value);

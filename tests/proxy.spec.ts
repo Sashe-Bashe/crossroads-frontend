@@ -155,3 +155,63 @@ test("image proxy preserves binary bytes, content type and workspace query", asy
   expect(response.headers.get("cache-control")).toBe("no-store");
   expect(new Uint8Array(await response.arrayBuffer())).toEqual(bytes);
 });
+
+test("guidance proxy forwards browser security and idempotency, never agent authorization", async () => {
+  const body = { instruction: "Try a better deposit.", expected_version: 7 };
+  const envelope = { negotiation: { id: "room-1" }, status_code: 200 };
+  globalThis.fetch = async (input, init) => {
+    expect(String(input)).toMatch(/\/api\/v1\/negotiations\/room-1\/guidance$/);
+    const headers = new Headers(init?.headers);
+    expect(headers.get("cookie")).toBe("market_session=human");
+    expect(headers.get("origin")).toBe("http://localhost:3100");
+    expect(headers.get("x-csrf-token")).toBe("csrf");
+    expect(headers.get("x-workspace-id")).toBe("seller-workspace");
+    expect(headers.get("idempotency-key")).toBe("guidance-retry-key");
+    expect(headers.has("authorization")).toBe(false);
+    expect(await new Response(init?.body).json()).toEqual(body);
+    return Response.json(envelope);
+  };
+  const response = await POST(
+    new NextRequest(
+      "http://localhost:3100/api/v1/negotiations/room-1/guidance",
+      {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          cookie: "market_session=human",
+          origin: "http://localhost:3100",
+          "x-csrf-token": "csrf",
+          "x-workspace-id": "seller-workspace",
+          "idempotency-key": "guidance-retry-key",
+          authorization: "Bearer agent-never-forwarded",
+        },
+        body: JSON.stringify(body),
+      },
+    ),
+    {
+      params: Promise.resolve({ path: ["negotiations", "room-1", "guidance"] }),
+    },
+  );
+  expect(response.status).toBe(200);
+  expect(await response.json()).toEqual(envelope);
+});
+
+for (const suffix of ["act", "claim", "retry", "guidance/extra"]) {
+  test(`adding human guidance does not expose negotiation ${suffix} operations`, async () => {
+    globalThis.fetch = async () => {
+      throw new Error("Must not reach backend");
+    };
+    const response = await POST(
+      new NextRequest(
+        `http://localhost:3100/api/v1/negotiations/room-1/${suffix}`,
+        { method: "POST" },
+      ),
+      {
+        params: Promise.resolve({
+          path: ["negotiations", "room-1", ...suffix.split("/")],
+        }),
+      },
+    );
+    expect(response.status).toBe(405);
+  });
+}

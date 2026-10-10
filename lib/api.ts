@@ -217,6 +217,25 @@ export function createDashboardApi(client = createMarketplaceClient()) {
         }),
       ).approval;
     },
+    async requestGuidance(
+      roomId: string,
+      instruction: string,
+      expectedVersion: number,
+      idempotencyKey: string,
+    ) {
+      return responseData(
+        await client.POST("/api/v1/negotiations/{room_id}/guidance", {
+          params: {
+            path: { room_id: roomId },
+            header: {
+              ...client.browserHeaders(),
+              "Idempotency-Key": idempotencyKey,
+            },
+          },
+          body: { instruction, expected_version: expectedVersion },
+        }),
+      ).negotiation;
+    },
   };
 }
 
