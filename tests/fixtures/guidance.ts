@@ -1,5 +1,12 @@
 import type { Page, Route } from "@playwright/test";
-import type { Me, Offer, Product, PurchaseRequest, Room } from "../../lib/api";
+import type {
+  Me,
+  Offer,
+  Order,
+  Product,
+  PurchaseRequest,
+  Room,
+} from "../../lib/api";
 
 const timestamp = "2026-10-10T09:00:00Z";
 const product: Product = {
@@ -54,6 +61,8 @@ const offer: Offer = {
   expires_at: "2026-10-12T09:00:00Z",
   created_at: timestamp,
   approvals: [],
+  private_brief_review: null,
+  shared_brief_review: [],
 };
 
 export function exampleRoom(): Room {
@@ -78,6 +87,16 @@ export function exampleRoom(): Room {
     invalid_reasons: [],
     activity: [],
     human_guidance: [],
+    human_questions: [],
+    private_brief: {
+      version: 0,
+      goals: "",
+      shareable_needs: "",
+      requirements: [],
+    },
+    shared_briefs: [],
+    requirement_blockers: [],
+    can_edit_brief: true,
     can_request_guidance: true,
     approval_url: "/?view=approvals&room=room-1",
   });
@@ -103,6 +122,7 @@ export async function mockMarketplace(
     [];
   const state = {
     rooms,
+    orders: { buyer: [] as Order[], seller: [] as Order[] },
     submissions,
     handler: null as
       | null
@@ -128,6 +148,12 @@ export async function mockMarketplace(
           : role;
     const room = rooms[selected];
     const path = new URL(incoming.url()).pathname;
+    if (path.startsWith("/api/v1/images/")) {
+      return route.fulfill({
+        contentType: "image/svg+xml",
+        body: '<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40"><rect width="40" height="40" fill="#93a591"/></svg>',
+      });
+    }
     let payload: unknown;
     if (incoming.method() === "POST" && path.endsWith("/guidance")) {
       const body = incoming.postDataJSON() as GuidanceSubmission;
@@ -152,6 +178,13 @@ export async function mockMarketplace(
         created_at: timestamp,
         applied_at: null,
       });
+      for (const question of room.human_questions) {
+        if (question.status === "pending") {
+          question.status = "answered";
+          question.answered_at = timestamp;
+          question.answer_guidance_id = `guidance-${submissions.length}`;
+        }
+      }
       payload = envelope("negotiation", room);
     } else if (path.endsWith("/auth/me")) {
       const identity: Me = {
@@ -173,7 +206,7 @@ export async function mockMarketplace(
     } else if (path.endsWith("/negotiations/room-1")) {
       payload = envelope("negotiation", room);
     } else if (path.endsWith("/orders")) {
-      payload = envelope("orders", pageOf([]));
+      payload = envelope("orders", pageOf(state.orders[selected]));
     } else if (path.endsWith("/activity")) {
       payload = envelope("activity", pageOf([]));
     } else if (path.endsWith("/rules")) {

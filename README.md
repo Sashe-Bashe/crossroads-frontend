@@ -17,6 +17,15 @@ Sending starts a fresh bounded round and clears previous approvals. Existing pri
 The shared [brand kit](design/neopact-brand-system/README.md) contains logos, bundled fonts, CSS/JSON tokens, component guidance, and the visual reference. Contributors and implementation agents should start with the [agent handoff](design/neopact-brand-system/AGENT-HANDOFF.md) before building UI.
 
 Open `design/neopact-brand-system/visual-guide.html` after cloning to preview the guide, or [download the standalone kit](design/neopact-brand-system.zip). Use the supplied SVG logos and retain the bundled font licenses. [Palette research](design/neopact-brand-system/PALETTE-RESEARCH.md) distinguishes measured readability from conversion hypotheses.
+## Conversations, needs and human review
+
+Open a negotiation to follow the agents' actual messages, questions, replies and explanations. Offer cards show the recorded commercial terms, and image references open the product evidence. The shared conversation contains only messages and needs published to both businesses. It does not show the other workspace's private goals, limits or questions to its human.
+
+**Your goals and needs** shows your current owner brief. Requirements are marked **Met**, **Not met**, **Unverified** or **Waived by owner**, with supporting evidence where available. Unsupported needs remain visible. An unresolved must-have blocks agreement; an unverified preference is not a confirmed promise. A waiver records the owner's decision and does not mark the need as met. Owners update briefs, sharing choices and waivers through the CLI.
+
+When an agent needs a decision, its question appears under **Your agent needs your input**. Select **Reply privately to my agent**, enter your answer and send it through the existing private instruction flow. Replies restart the negotiation and clear prior approvals. Giving an answer does not edit the brief or waive a requirement; those changes still require the owner to update the brief through the CLI.
+
+After both agents agree, the offer appears in both businesses' **Approvals** queues. Review the exact terms, product evidence and **Needs reviewed with offer** before approving. This needs review is saved with the offer and retained in the order; later changes to the current brief do not rewrite it. Each business must approve the same valid offer before an order is recorded.
 
 ## Run locally
 
@@ -119,7 +128,7 @@ npm run build
 npm run test:ui
 ```
 
-CI runs these checks on every push and pull request. `test:unit` runs mocked transport and proxy tests: resource envelopes, API failures, workspace headers, cookie/CSRF and idempotency transport, blocked dashboard operations and binary images. `test:ui` starts an isolated preview and mocks every API call to test buyer/seller instructions, draft preservation, retries and workspace isolation. Both suites leave real data untouched. Browser tests use local Chrome by default; CI installs Playwright Chromium.
+CI runs these checks on every push and pull request. `test:unit` runs mocked transport and proxy tests: resource envelopes, API failures, workspace headers, cookie/CSRF and idempotency transport, blocked dashboard operations and binary images. `test:ui` starts an isolated preview and mocks every API call to test buyer/seller instructions, draft preservation, retries, shared conversation, private questions, needs evidence, immutable reviews and workspace isolation. It checks mobile controls and transcript bounds, including long untrusted text. Both suites leave real data untouched. Browser tests use local Chrome by default; CI installs Playwright Chromium.
 
 The Docker image runs Next.js's standalone server as a non-root user. For a temporary host production preview, `npm run start` serves the completed build; Docker uses the generated standalone `server.js` directly.
 

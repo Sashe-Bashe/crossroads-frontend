@@ -1074,6 +1074,317 @@ summary {
   align-items: center;
   color: #6e7c60;
 }
+.conversation {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin: 22px 0;
+  overflow: hidden;
+}
+.conversation-heading {
+  padding: 18px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+  background: var(--bg);
+}
+.conversation-heading h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.conversation-heading p,
+.conversation-footnote,
+.conversation-empty {
+  font-size: 12px;
+  margin: 0;
+}
+.conversation-audience {
+  font-size: 10px;
+  border-radius: 30px;
+  padding: 6px 9px;
+  color: var(--green);
+  background: var(--pale);
+}
+.conversation-transcript {
+  max-height: 420px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 18px;
+  overscroll-behavior-y: contain;
+}
+.conversation-entry {
+  border: 1px solid var(--border);
+  border-left: 3px solid #8faaa1;
+  border-radius: 8px;
+  padding: 14px;
+  background: var(--bg);
+  margin-right: 22px;
+  overflow-wrap: anywhere;
+}
+.conversation-seller {
+  border-left-color: #bbbc85;
+  background: #f8f8ed;
+  margin-left: 22px;
+  margin-right: 0;
+}
+.conversation-entry + .conversation-entry {
+  margin-top: 14px;
+}
+.conversation-entry-heading,
+.need-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.conversation-entry-heading strong {
+  text-transform: capitalize;
+  font-size: 12px;
+}
+.conversation-entry-heading time,
+.conversation-event-label {
+  color: var(--muted);
+  font-size: 10px;
+}
+.conversation-event-label {
+  display: block;
+  margin: 5px 0 10px;
+}
+.conversation-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  color: var(--ink);
+  margin-bottom: 12px;
+}
+.conversation-entry blockquote {
+  border-left: 2px solid #aab9ad;
+  background: #ffffffa8;
+  padding: 9px 12px;
+  margin: 12px 0;
+  font-size: 12px;
+}
+.conversation-entry blockquote strong {
+  font-weight: 500;
+}
+.conversation-entry blockquote p {
+  margin: 5px 0 0;
+  white-space: pre-wrap;
+  color: var(--ink);
+}
+.conversation-offer {
+  padding: 12px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.conversation-offer > div {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.conversation-offer > div > strong:last-child {
+  margin-left: auto;
+  color: var(--green);
+}
+.conversation-offer dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  font-size: 12px;
+}
+.conversation-offer dt {
+  color: var(--muted);
+  font-size: 10px;
+  margin-bottom: 4px;
+}
+.conversation-offer dd {
+  margin: 0;
+}
+.conversation-offer small {
+  color: var(--muted);
+  font-size: 10px;
+}
+.conversation-evidence {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+}
+.conversation-evidence a {
+  display: block;
+  max-width: min(140px, 100%);
+}
+.conversation-evidence img {
+  width: 100%;
+  height: 90px;
+  object-fit: cover;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.conversation-evidence span {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+  font-size: 10px;
+  margin-top: 4px;
+}
+.conversation-evidence svg {
+  flex-shrink: 0;
+}
+.conversation-footnote,
+.conversation-empty {
+  padding: 15px 18px;
+}
+.conversation-footnote {
+  border-top: 1px solid var(--border);
+}
+.conversation-latest {
+  margin: 0 18px 15px;
+  white-space: normal;
+}
+.private-brief {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+  margin: 20px 0;
+}
+.private-brief h3 {
+  margin: 10px 0;
+}
+.private-brief > p,
+.private-brief > small,
+.offer-needs-review p,
+.shared-needs p {
+  font-size: 12px;
+}
+.private-brief > small {
+  display: block;
+  margin-top: 14px;
+  color: var(--muted);
+}
+.needs-list {
+  padding: 0;
+  list-style: none;
+  margin: 14px 0 0;
+}
+.need {
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  overflow-wrap: anywhere;
+}
+.need + .need {
+  margin-top: 10px;
+}
+.need-heading > strong {
+  font-size: 12px;
+}
+.need-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  color: #786440;
+}
+.need-status-met {
+  color: var(--green);
+}
+.need-status-unmet {
+  color: var(--red);
+}
+.need-status-waived {
+  color: #596477;
+}
+.need p {
+  font-size: 12px;
+  margin: 8px 0 0;
+  color: var(--ink);
+}
+.need-meta {
+  display: flex;
+  gap: 6px 12px;
+  flex-wrap: wrap;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+.need-evidence {
+  display: grid;
+  gap: 4px;
+  font-size: 10px;
+  color: var(--muted);
+  margin-top: 9px;
+}
+.brief-shared-excerpt {
+  padding: 12px;
+  background: var(--bg);
+  border-left: 2px solid #8faaa1;
+}
+.brief-shared-excerpt strong {
+  font-size: 11px;
+}
+.brief-shared-excerpt p {
+  margin: 8px 0 0;
+}
+.needs-blockers {
+  border-left: 3px solid var(--red);
+  padding: 12px;
+  background: #fbf0eb;
+  margin-top: 14px;
+  font-size: 12px;
+}
+.needs-blockers ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+.needs-blockers li + li {
+  margin-top: 5px;
+}
+.shared-needs {
+  margin: 0;
+  padding: 15px 18px;
+}
+.shared-needs h4 {
+  text-transform: capitalize;
+  font-size: 12px;
+  margin: 16px 0 8px;
+}
+.offer-needs-review h4 {
+  font-size: 12px;
+}
+.offer-needs-review > .shared-needs {
+  margin-top: 14px;
+  padding: 12px;
+}
+.human-questions {
+  margin-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.human-questions h4 {
+  font-size: 13px;
+}
+.human-questions article {
+  padding: 12px;
+  background: var(--paper);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  margin-bottom: 10px;
+}
+.human-questions p {
+  margin-top: 10px;
+  margin-bottom: 6px;
+  font-size: 12px;
+}
+.human-questions small {
+  font-size: 10px;
+  color: var(--muted);
+}
 .guidance-box {
   border: 1px solid var(--border);
   border-radius: var(--radius);

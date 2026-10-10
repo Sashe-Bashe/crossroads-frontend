@@ -52,6 +52,10 @@ export function NegotiationGuidance({
   } | null>(null);
   const instruction = draft.trim();
   const guidance = room.human_guidance;
+  const questions = room.human_questions;
+  const pendingQuestions = questions.filter(
+    (question) => question.status === "pending",
+  );
 
   function edit(value: string) {
     setDraft(value);
@@ -119,7 +123,8 @@ export function NegotiationGuidance({
     }
   }
 
-  if (!room.can_request_guidance && !guidance.length) return null;
+  if (!room.can_request_guidance && !guidance.length && !questions.length)
+    return null;
   return (
     <section className="guidance-box" aria-label="Private agent instructions">
       <div className="guidance-heading">
@@ -139,10 +144,57 @@ export function NegotiationGuidance({
           </button>
         )}
       </div>
+      {questions.length > 0 && (
+        <section
+          className="human-questions"
+          aria-label="Private questions from your agent"
+        >
+          <h4>
+            {pendingQuestions.length
+              ? "Your agent needs your input"
+              : "Your agent’s questions"}
+          </h4>
+          {questions.map((question) => (
+            <article key={question.id}>
+              <div className="need-heading">
+                <strong>
+                  {question.status === "pending"
+                    ? "Waiting for your answer"
+                    : "Answered privately"}
+                </strong>
+                <small>{new Date(question.created_at).toLocaleString()}</small>
+              </div>
+              <p className="conversation-text">{question.question}</p>
+              {question.answered_at && (
+                <small>
+                  Answered {new Date(question.answered_at).toLocaleString()}
+                </small>
+              )}
+            </article>
+          ))}
+          {pendingQuestions.length > 0 &&
+            room.can_request_guidance &&
+            !open && (
+              <button
+                className="button secondary"
+                disabled={disabled}
+                onClick={() => setOpen(true)}
+              >
+                Reply privately to my agent
+              </button>
+            )}
+        </section>
+      )}
       {notice && <p role="status">{notice}</p>}
       {open && room.can_request_guidance && (
         <form onSubmit={submit} className="guidance-form">
           <label htmlFor="agent-instruction">Tell your agent what to try</label>
+          {pendingQuestions.length > 0 && (
+            <p>
+              Your reply answers the pending questions above and gives your
+              agent direction for its next turn.
+            </p>
+          )}
           <textarea
             id="agent-instruction"
             rows={4}
